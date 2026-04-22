@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>姿勢チェックアプリ</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      color: #2d3748;
+      min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 18px 24px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    header h1 { font-size: 1.6rem; letter-spacing: 0.05em; }
+    header p { font-size: 0.85rem; opacity: 0.85; margin-top: 4px; }
+
+    .tabs {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      padding: 16px;
+      background: white;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .tab-btn {
+      padding: 8px 22px;
+      border: 2px solid #667eea;
+      background: white;
+      color: #667eea;
+      border-radius: 24px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .tab-btn.active, .tab-btn:hover {
+      background: #667eea;
+      color: white;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ===== 撮影タブ ===== */
+    .section {
+      max-width: 900px;
+      margin: 24px auto;
+      padding: 0 16px;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+    }
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #4a5568;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .photo-slots {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 600px) { .photo-slots { grid-template-columns: 1fr; } }
+
+    .photo-slot {
+      position: relative;
+      border: 2px dashed #cbd5e0;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #f7fafc;
+      min-height: 280px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .photo-slot canvas {
+      display: block;
+      max-width: 100%;
+      max-height: 400px;
+    }
+    .slot-label {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background: rgba(0,0,0,0.55);
+      color: white;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      z-index: 5;
+    }
+    .slot-placeholder {
+      text-align: center;
+      color: #a0aec0;
+      padding: 20px;
+    }
+    .slot-placeholder .icon { font-size: 3rem; }
+    .slot-placeholder p { font-size: 0.85rem; margin-top: 8px; }
+
+    .slot-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+      justify-content: center;
+    }
+    .btn {
+      padding: 7px 14px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: #667eea; color: white; }
+    .btn-primary:hover { background: #5a67d8; }
+    .btn-success { background: #48bb78; color: white; }
+    .btn-success:hover { background: #38a169; }
+    .btn-danger { background: #fc8181; color: white; }
+    .btn-danger:hover { background: #f56565; }
+    .btn-outline { background: white; color: #667eea; border: 1.5px solid #667eea; }
+    .btn-outline:hover { background: #667eea; color: white; }
+    .btn-gray { background: #e2e8f0; color: #4a5568; }
+    .btn-gray:hover { background: #cbd5e0; }
+
+    input[type="file"] { display: none; }
+
+    /* グリッド設定 */
+    .grid-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+    .grid-controls label { font-size: 0.85rem; color: #4a5568; }
+    .grid-controls input[type="range"] { width: 100px; }
+    .color-pick { width: 36px; height: 28px; border: none; border-radius: 6px; cursor: pointer; padding: 2px; }
+    .toggle-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .toggle-label { font-size: 0.82rem; color: #4a5568; }
+
+    /* ===== 比較タブ ===== */
+    .compare-wrap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 600px) { .compare-wrap { grid-template-columns: 1fr; } }
+
+    .compare-panel {
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+      background: #edf2f7;
+    }
+    .compare-panel canvas { display: block; width: 100%; }
+    .compare-badge {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      background: rgba(102,126,234,0.85);
+      color: white;
+      text-align: center;
+      padding: 6px;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    /* スライダー比較 */
+    .slider-wrap {
+      position: relative;
+      user-select: none;
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: col-resize;
+    }
+    .slider-canvas-base, .slider-canvas-top {
+      display: block;
+      width: 100%;
+    }
+    .slider-canvas-top {
+      position: absolute;
+      top: 0; left: 0;
+      clip-path: inset(0 50% 0 0);
+    }
+    .slider-line {
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 3px;
+      background: white;
+      left: 50%;
+      cursor: col-resize;
+      z-index: 10;
+    }
+    .slider-handle {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 36px; height: 36px;
+      background: white;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      z-index: 11;
+    }
+
+    /* ===== アドバイスタブ ===== */
+    .advice-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .advice-date { font-size: 0.8rem; color: #a0aec0; }
+    .advice-list { display: flex; flex-direction: column; gap: 14px; }
+    .advice-item {
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 14px 16px;
+      position: relative;
+    }
+    .advice-item .advice-tag {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .tag-red { background: #fed7d7; color: #c53030; }
+    .tag-yellow { background: #fefcbf; color: #975a16; }
+    .tag-green { background: #c6f6d5; color: #276749; }
+    .tag-blue { background: #bee3f8; color: #2a4365; }
+    .advice-item textarea {
+      width: 100%;
+      border: none;
+      resize: vertical;
+      font-size: 0.9rem;
+      color: #2d3748;
+      line-height: 1.6;
+      font-family: inherit;
+      background: transparent;
+      outline: none;
+      min-height: 60px;
+    }
+    .advice-item .delete-btn {
+      position: absolute;
+      top: 10px; right: 10px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #cbd5e0;
+      font-size: 1rem;
+    }
+    .advice-item .delete-btn:hover { color: #fc8181; }
+    .add-advice-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* 印刷 */
+    .print-area { display: none; }
+    @media print {
+      header, .tabs, .slot-controls, .grid-controls, .btn, .add-advice-row { display: none !important; }
+      .print-area { display: block !important; }
+      body { background: white; }
+    }
+
+    /* カメラモーダル */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: #1a202c;
+      border-radius: 12px;
+      padding: 20px;
+      max-width: 500px;
+      width: 95%;
+    }
+    .modal-box video {
+      width: 100%;
+      border-radius: 8px;
+      background: black;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    /* ダウンロードボタン */
+    .dl-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>📐 姿勢チェックアプリ</h1>
+  <p>写真にグリッドを重ねてビフォーアフターを比較・アドバイスを記録</p>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('capture')">📷 撮影・編集</button>
+  <button class="tab-btn" onclick="switchTab('compare')">↔ 比較</button>
+  <button class="tab-btn" onclick="switchTab('advice')">📝 アドバイス</button>
+</div>
+
+<!-- ===== 撮影タブ ===== -->
+<div id="tab-capture" class="tab-content active">
+  <div class="section">
+    <!-- グリッド設定 -->
+    <div class="card">
+      <h2>⚙️ グリッド設定</h2>
+      <div class="grid-controls">
+        <label>分割数:
+          <input type="range" id="gridCount" min="2" max="20" value="8" oninput="updateGridLabel(this); redrawAll()">
+          <span id="gridCountLabel">8</span>
+        </label>
+        <label>透明度:
+          <input type="range" id="gridAlpha" min="0.1" max="1" step="0.05" value="0.5" oninput="redrawAll()">
+        </label>
+        <label>線の色:
+          <input type="color" class="color-pick" id="gridColor" value="#00e5ff" oninput="redrawAll()">
+        </label>
+        <label>線の太さ:
+          <input type="range" id="lineWidth" min="0.5" max="4" step="0.5" value="1" oninput="redrawAll()">
+        </label>
+      </div>
+      <div class="toggle-row" style="margin-top:10px;">
+        <span class="toggle-label">表示:</span>
+        <label><input type="checkbox" id="showVertical" checked onchange="redrawAll()"> 縦線</label>
+        <label><input type="checkbox" id="showHorizontal" checked onchange="redrawAll()"> 横線</label>
+        <label><input type="checkbox" id="showCenter" checked onchange="redrawAll()"> 中心線強調</label>
+        <label><input type="checkbox" id="showDiag" onchange="redrawAll()"> 対角線</label>
+      </div>
+    </div>
+
+    <!-- 写真スロット -->
+    <div class="card">
+      <h2>🖼 写真</h2>
+      <div class="photo-slots">
+        <!-- Before -->
+        <div>
+          <div class="photo-slot" id="slot-before">
+            <span class="slot-label">BEFORE</span>
+            <div class="slot-placeholder" id="placeholder-before">
+              <div class="icon">📷</div>
+              <p>写真を追加してください</p>
+            </div>
+            <canvas id="canvas-before" style="display:none"></canvas>
+          </div>
+          <div class="slot-controls">
+            <button class="btn btn-primary" onclick="triggerFile('before')">📁 ファイル選択</button>
+            <button class="btn btn-outline" onclick="openCamera('before')">📷 カメラ</button>
+            <button class="btn btn-gray" onclick="clearSlot('before')">✕</button>
+          </div>
+          <input type="file" id="file-before" accept="image/*" onchange="loadFile(event,'before')">
+        </div>
+        <!-- After -->
+        <div>
+          <div class="photo-slot" id="slot-after">
+            <span class="slot-label">AFTER</span>
+            <div class="slot-placeholder" id="placeholder-after">
+              <div class="icon">📷</div>
+              <p>写真を追加してください</p>
+            </div>
+            <canvas id="canvas-after" style="display:none"></canvas>
+          </div>
+          <div class="slot-controls">
+            <button class="btn btn-primary" onclick="triggerFile('after')">📁 ファイル選択</button>
+            <button class="btn btn-outline" onclick="openCamera('after')">📷 カメラ</button>
+            <button class="btn btn-gray" onclick="clearSlot('after')">✕</button>
+          </div>
+          <input type="file" id="file-after" accept="image/*" onchange="loadFile(event,'after')">
+        </div>
+      </div>
+      <div class="dl-row">
+        <button class="btn btn-success" onclick="downloadCanvas('before')">⬇ BEFORE保存</button>
+        <button class="btn btn-success" onclick="downloadCanvas('after')">⬇ AFTER保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 比較タブ ===== -->
+<div id="tab-compare" class="tab-content">
+  <div class="section">
+    <div class="card">
+      <h2>↔ 並列比較</h2>
+      <div class="compare-wrap">
+        <div class="compare-panel">
+          <div class="compare-badge">BEFORE</div>
+          <canvas id="cmp-before" style="margin-top:32px"></canvas>
+        </div>
+        <div class="compare-panel">
+          <div class="compare-badge" style="background:rgba(72,187,120,0.85)">AFTER</div>
+          <canvas id="cmp-after" style="margin-top:32px"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🎚 スライダー比較</h2>
+      <p style="font-size:0.82rem;color:#718096;margin-bottom:10px;">ドラッグして左右を比較できます</p>
+      <div class="slider-wrap" id="sliderWrap">
+        <canvas id="slider-base" class="slider-canvas-base"></canvas>
+        <canvas id="slider-top" class="slider-canvas-top"></canvas>
+        <div class="slider-line" id="sliderLine">
+          <div class="slider-handle">⇔</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== アドバイスタブ ===== -->
+<div id="tab-advice" class="tab-content">
+  <div class="section">
+    <div class="card">
+      <div class="advice-header">
+        <h2>📝 アドバイス・メモ</h2>
+        <span class="advice-date" id="adviceDate"></span>
+      </div>
+      <div class="advice-list" id="adviceList"></div>
+      <div class="add-advice-row" style="margin-top:16px;">
+        <button class="btn btn-danger" onclick="addAdvice('red','要改善')">🔴 要改善</button>
+        <button class="btn" style="background:#f6e05e;color:#744210;" onclick="addAdvice('yellow','注意')">🟡 注意</button>
+        <button class="btn btn-success" onclick="addAdvice('green','良好')">🟢 良好</button>
+        <button class="btn btn-outline" onclick="addAdvice('blue','メモ')">🔵 メモ</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📄 レポート出力</h2>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="window.print()">🖨 印刷</button>
+        <button class="btn btn-success" onclick="exportReport()">⬇ テキスト保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- カメラモーダル -->
+<div class="modal-overlay" id="cameraModal">
+  <div class="modal-box">
+    <video id="cameraVideo" autoplay playsinline></video>
+    <div class="modal-actions">
+      <button class="btn btn-success" onclick="capturePhoto()">📸 撮影</button>
+      <button class="btn btn-danger" onclick="closeCamera()">✕ キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<canvas id="offscreen" style="display:none"></canvas>
+
+<script>
+// ===== State =====
+const images = { before: null, after: null };
+let cameraTarget = null;
+let cameraStream = null;
+
+// ===== Tabs =====
+function switchTab(name) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+  if (name === 'compare') updateCompare();
+}
+
+// ===== Grid config =====
+function cfg() {
+  return {
+    count: +document.getElementById('gridCount').value,
+    alpha: +document.getElementById('gridAlpha').value,
+    color: document.getElementById('gridColor').value,
+    lw: +document.getElementById('lineWidth').value,
+    vert: document.getElementById('showVertical').checked,
+    horiz: document.getElementById('showHorizontal').checked,
+    center: document.getElementById('showCenter').checked,
+    diag: document.getElementById('showDiag').checked,
+  };
+}
+function updateGridLabel(el) {
+  document.getElementById('gridCountLabel').textContent = el.value;
+}
+
+// ===== Draw grid on canvas =====
+function drawGrid(ctx, w, h) {
+  const c = cfg();
+  const hex = c.color;
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+
+  ctx.save();
+  ctx.strokeStyle = `rgba(${r},${g},${b},${c.alpha})`;
+  ctx.lineWidth = c.lw;
+
+  if (c.vert) {
+    for (let i = 1; i < c.count; i++) {
+      const x = w * i / c.count;
+      if (c.center && i === Math.floor(c.count / 2)) {
+        ctx.save();
+        ctx.lineWidth = c.lw * 2.5;
+        ctx.strokeStyle = `rgba(${r},${g},${b},${Math.min(c.alpha * 1.4, 1)})`;
+        ctx.setLineDash([]);
+      }
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+      if (c.center && i === Math.floor(c.count / 2)) ctx.restore();
+    }
+  }
+  if (c.horiz) {
+    for (let i = 1; i < c.count; i++) {
+      const y = h * i / c.count;
+      if (c.center && i === Math.floor(c.count / 2)) {
+        ctx.save();
+        ctx.lineWidth = c.lw * 2.5;
+        ctx.strokeStyle = `rgba(${r},${g},${b},${Math.min(c.alpha * 1.4, 1)})`;
+      }
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+      if (c.center && i === Math.floor(c.count / 2)) ctx.restore();
+    }
+  }
+  if (c.diag) {
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(w,h); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(w,0); ctx.lineTo(0,h); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function redrawSlot(slot) {
+  const img = images[slot];
+  const canvas = document.getElementById('canvas-' + slot);
+  if (!img) return;
+  const maxW = canvas.parentElement.clientWidth || 400;
+  const scale = Math.min(1, maxW / img.naturalWidth);
+  canvas.width = img.naturalWidth * scale;
+  canvas.height = img.naturalHeight * scale;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  drawGrid(ctx, canvas.width, canvas.height);
+}
+
+function redrawAll() {
+  if (images.before) redrawSlot('before');
+  if (images.after) redrawSlot('after');
+  updateCompare();
+}
+
+// ===== File loading =====
+function triggerFile(slot) {
+  document.getElementById('file-' + slot).click();
+}
+function loadFile(event, slot) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const img = new Image();
+  img.onload = () => {
+    images[slot] = img;
+    showCanvas(slot);
+    redrawSlot(slot);
+  };
+  img.src = URL.createObjectURL(file);
+}
+
+function showCanvas(slot) {
+  document.getElementById('placeholder-' + slot).style.display = 'none';
+  const canvas = document.getElementById('canvas-' + slot);
+  canvas.style.display = 'block';
+  document.getElementById('slot-' + slot).style.border = '2px solid #667eea';
+}
+function clearSlot(slot) {
+  images[slot] = null;
+  const canvas = document.getElementById('canvas-' + slot);
+  canvas.style.display = 'none';
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  document.getElementById('placeholder-' + slot).style.display = 'flex';
+  document.getElementById('slot-' + slot).style.border = '2px dashed #cbd5e0';
+  document.getElementById('file-' + slot).value = '';
+}
+
+// ===== Camera =====
+function openCamera(slot) {
+  cameraTarget = slot;
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+    .then(stream => {
+      cameraStream = stream;
+      document.getElementById('cameraVideo').srcObject = stream;
+      document.getElementById('cameraModal').classList.add('open');
+    })
+    .catch(() => alert('カメラへのアクセスが許可されていません。\nファイル選択をお使いください。'));
+}
+function capturePhoto() {
+  const video = document.getElementById('cameraVideo');
+  const offscreen = document.getElementById('offscreen');
+  offscreen.width = video.videoWidth;
+  offscreen.height = video.videoHeight;
+  offscreen.getContext('2d').drawImage(video, 0, 0);
+  const img = new Image();
+  img.onload = () => {
+    images[cameraTarget] = img;
+    showCanvas(cameraTarget);
+    redrawSlot(cameraTarget);
+  };
+  img.src = offscreen.toDataURL('image/png');
+  closeCamera();
+}
+function closeCamera() {
+  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+  document.getElementById('cameraModal').classList.remove('open');
+  document.getElementById('cameraVideo').srcObject = null;
+}
+
+// ===== Download =====
+function downloadCanvas(slot) {
+  const canvas = document.getElementById('canvas-' + slot);
+  if (!images[slot]) { alert('写真がありません'); return; }
+  const a = document.createElement('a');
+  a.download = `posture_${slot}_${new Date().toISOString().slice(0,10)}.png`;
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+}
+
+// ===== Compare =====
+function updateCompare() {
+  ['before','after'].forEach(slot => {
+    const src = document.getElementById('canvas-' + slot);
+    const dst = document.getElementById('cmp-' + slot);
+    if (!images[slot]) { const c = dst.getContext('2d'); c.clearRect(0,0,dst.width,dst.height); return; }
+    dst.width = src.width;
+    dst.height = src.height;
+    dst.getContext('2d').drawImage(src, 0, 0);
+    dst.style.width = '100%';
+  });
+  updateSlider();
+}
+
+// ===== Slider =====
+function updateSlider() {
+  const wrap = document.getElementById('sliderWrap');
+  const base = document.getElementById('slider-base');
+  const top = document.getElementById('slider-top');
+  const line = document.getElementById('sliderLine');
+  const handle = line.querySelector('.slider-handle');
+
+  const srcBefore = document.getElementById('canvas-before');
+  const srcAfter = document.getElementById('canvas-after');
+  if (!images.before && !images.after) return;
+
+  const w = Math.max(srcBefore.width || 0, srcAfter.width || 0) || 600;
+  const h = Math.max(srcBefore.height || 0, srcAfter.height || 0) || 400;
+
+  base.width = w; base.height = h;
+  top.width = w; top.height = h;
+
+  const bCtx = base.getContext('2d');
+  const tCtx = top.getContext('2d');
+  bCtx.clearRect(0,0,w,h);
+  tCtx.clearRect(0,0,w,h);
+
+  if (images.before) bCtx.drawImage(srcBefore, 0, 0, w, h);
+  if (images.after) tCtx.drawImage(srcAfter, 0, 0, w, h);
+
+  base.style.width = '100%';
+  top.style.width = '100%';
+
+  // Label overlay
+  bCtx.fillStyle = 'rgba(0,0,0,0.45)';
+  bCtx.fillRect(0,0,w,32);
+  bCtx.fillStyle = 'white';
+  bCtx.font = `bold ${Math.round(w*0.04)}px Segoe UI`;
+  bCtx.fillText('BEFORE', 12, 22);
+
+  tCtx.fillStyle = 'rgba(0,0,0,0.45)';
+  tCtx.fillRect(0,0,w,32);
+  tCtx.fillStyle = 'white';
+  tCtx.font = `bold ${Math.round(w*0.04)}px Segoe UI`;
+  tCtx.textAlign = 'right';
+  tCtx.fillText('AFTER', w-12, 22);
+  tCtx.textAlign = 'left';
+
+  setSliderPos(0.5);
+}
+
+let sliderDragging = false;
+function setSliderPos(frac) {
+  const top = document.getElementById('slider-top');
+  const line = document.getElementById('sliderLine');
+  const w = document.getElementById('sliderWrap').offsetWidth;
+  const px = Math.round(frac * w);
+  top.style.clipPath = `inset(0 ${w - px}px 0 0)`;
+  line.style.left = px + 'px';
+}
+
+document.getElementById('sliderWrap').addEventListener('mousedown', e => { sliderDragging = true; moveSlider(e); });
+document.getElementById('sliderWrap').addEventListener('touchstart', e => { sliderDragging = true; moveSlider(e.touches[0]); }, {passive:true});
+document.addEventListener('mousemove', e => { if (sliderDragging) moveSlider(e); });
+document.addEventListener('touchmove', e => { if (sliderDragging) moveSlider(e.touches[0]); }, {passive:true});
+document.addEventListener('mouseup', () => sliderDragging = false);
+document.addEventListener('touchend', () => sliderDragging = false);
+
+function moveSlider(e) {
+  const wrap = document.getElementById('sliderWrap');
+  const rect = wrap.getBoundingClientRect();
+  const frac = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  setSliderPos(frac);
+}
+
+// ===== Advice =====
+const tagMap = { red:'tag-red', yellow:'tag-yellow', green:'tag-green', blue:'tag-blue' };
+let advices = [];
+
+document.getElementById('adviceDate').textContent = new Date().toLocaleDateString('ja-JP', {year:'numeric',month:'long',day:'numeric'});
+
+function addAdvice(color, label) {
+  const id = Date.now();
+  advices.push({ id, color, label, text: '' });
+  renderAdvices();
+  const ta = document.querySelector(`[data-id="${id}"] textarea`);
+  if (ta) ta.focus();
+}
+function deleteAdvice(id) {
+  advices = advices.filter(a => a.id !== id);
+  renderAdvices();
+}
+function renderAdvices() {
+  const list = document.getElementById('adviceList');
+  list.innerHTML = advices.map(a => `
+    <div class="advice-item" data-id="${a.id}">
+      <span class="advice-tag ${tagMap[a.color]}">${a.label}</span>
+      <button class="delete-btn" onclick="deleteAdvice(${a.id})">✕</button>
+      <textarea placeholder="アドバイスやメモを入力..." oninput="syncText(${a.id}, this.value)">${a.text}</textarea>
+    </div>
+  `).join('');
+}
+function syncText(id, val) {
+  const a = advices.find(x => x.id === id);
+  if (a) a.text = val;
+}
+
+function exportReport() {
+  const lines = [`姿勢チェックレポート\n日付: ${new Date().toLocaleDateString('ja-JP')}\n`];
+  advices.forEach(a => {
+    lines.push(`[${a.label}] ${a.text || '(未入力)'}`);
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const el = document.createElement('a');
+  el.href = url;
+  el.download = `posture_report_${new Date().toISOString().slice(0,10)}.txt`;
+  el.click();
+  URL.revokeObjectURL(url);
+}
+
+// ===== Initial advice templates =====
+const templates = [
+  { color: 'blue', label: 'メモ', text: '撮影日: ' + new Date().toLocaleDateString('ja-JP') },
+  { color: 'red', label: '要改善', text: '' },
+  { color: 'green', label: '良好', text: '' },
+];
+templates.forEach(t => {
+  advices.push({ id: Date.now() + Math.random(), ...t });
+});
+renderAdvices();
+</script>
+</body>
+</html>
