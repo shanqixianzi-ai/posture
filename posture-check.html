@@ -1,797 +1,270 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>姿勢チェックアプリ</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #f0f4f8;
-      color: #2d3748;
-      min-height: 100vh;
-    }
-    header {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-      padding: 18px 24px;
-      text-align: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }
-    header h1 { font-size: 1.6rem; letter-spacing: 0.05em; }
-    header p { font-size: 0.85rem; opacity: 0.85; margin-top: 4px; }
-
-    .tabs {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      padding: 16px;
-      background: white;
-      border-bottom: 1px solid #e2e8f0;
-    }
-    .tab-btn {
-      padding: 8px 22px;
-      border: 2px solid #667eea;
-      background: white;
-      color: #667eea;
-      border-radius: 24px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      font-weight: 600;
-      transition: all 0.2s;
-    }
-    .tab-btn.active, .tab-btn:hover {
-      background: #667eea;
-      color: white;
-    }
-
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-
-    /* ===== 撮影タブ ===== */
-    .section {
-      max-width: 900px;
-      margin: 24px auto;
-      padding: 0 16px;
-    }
-    .card {
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      margin-bottom: 20px;
-    }
-    .card h2 {
-      font-size: 1rem;
-      font-weight: 700;
-      color: #4a5568;
-      margin-bottom: 14px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .photo-slots {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-    @media (max-width: 600px) { .photo-slots { grid-template-columns: 1fr; } }
-
-    .photo-slot {
-      position: relative;
-      border: 2px dashed #cbd5e0;
-      border-radius: 10px;
-      overflow: hidden;
-      background: #f7fafc;
-      min-height: 280px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-    .photo-slot canvas {
-      display: block;
-      max-width: 100%;
-      max-height: 400px;
-    }
-    .slot-label {
-      position: absolute;
-      top: 8px;
-      left: 8px;
-      background: rgba(0,0,0,0.55);
-      color: white;
-      padding: 2px 10px;
-      border-radius: 20px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      z-index: 5;
-    }
-    .slot-placeholder {
-      text-align: center;
-      color: #a0aec0;
-      padding: 20px;
-    }
-    .slot-placeholder .icon { font-size: 3rem; }
-    .slot-placeholder p { font-size: 0.85rem; margin-top: 8px; }
-
-    .slot-controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 10px;
-      justify-content: center;
-    }
-    .btn {
-      padding: 7px 14px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 0.82rem;
-      font-weight: 600;
-      transition: all 0.2s;
-    }
-    .btn-primary { background: #667eea; color: white; }
-    .btn-primary:hover { background: #5a67d8; }
-    .btn-success { background: #48bb78; color: white; }
-    .btn-success:hover { background: #38a169; }
-    .btn-danger { background: #fc8181; color: white; }
-    .btn-danger:hover { background: #f56565; }
-    .btn-outline { background: white; color: #667eea; border: 1.5px solid #667eea; }
-    .btn-outline:hover { background: #667eea; color: white; }
-    .btn-gray { background: #e2e8f0; color: #4a5568; }
-    .btn-gray:hover { background: #cbd5e0; }
-
-    input[type="file"] { display: none; }
-
-    /* グリッド設定 */
-    .grid-controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      align-items: center;
-    }
-    .grid-controls label { font-size: 0.85rem; color: #4a5568; }
-    .grid-controls input[type="range"] { width: 100px; }
-    .color-pick { width: 36px; height: 28px; border: none; border-radius: 6px; cursor: pointer; padding: 2px; }
-    .toggle-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-    .toggle-label { font-size: 0.82rem; color: #4a5568; }
-
-    /* ===== 比較タブ ===== */
-    .compare-wrap {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-    @media (max-width: 600px) { .compare-wrap { grid-template-columns: 1fr; } }
-
-    .compare-panel {
-      border-radius: 10px;
-      overflow: hidden;
-      position: relative;
-      background: #edf2f7;
-    }
-    .compare-panel canvas { display: block; width: 100%; }
-    .compare-badge {
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      background: rgba(102,126,234,0.85);
-      color: white;
-      text-align: center;
-      padding: 6px;
-      font-weight: 700;
-      font-size: 0.9rem;
-    }
-
-    /* スライダー比較 */
-    .slider-wrap {
-      position: relative;
-      user-select: none;
-      border-radius: 10px;
-      overflow: hidden;
-      cursor: col-resize;
-    }
-    .slider-canvas-base, .slider-canvas-top {
-      display: block;
-      width: 100%;
-    }
-    .slider-canvas-top {
-      position: absolute;
-      top: 0; left: 0;
-      clip-path: inset(0 50% 0 0);
-    }
-    .slider-line {
-      position: absolute;
-      top: 0; bottom: 0;
-      width: 3px;
-      background: white;
-      left: 50%;
-      cursor: col-resize;
-      z-index: 10;
-    }
-    .slider-handle {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 36px; height: 36px;
-      background: white;
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-      z-index: 11;
-    }
-
-    /* ===== アドバイスタブ ===== */
-    .advice-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-    .advice-date { font-size: 0.8rem; color: #a0aec0; }
-    .advice-list { display: flex; flex-direction: column; gap: 14px; }
-    .advice-item {
-      border: 1.5px solid #e2e8f0;
-      border-radius: 10px;
-      padding: 14px 16px;
-      position: relative;
-    }
-    .advice-item .advice-tag {
-      display: inline-block;
-      padding: 2px 10px;
-      border-radius: 20px;
-      font-size: 0.72rem;
-      font-weight: 700;
-      margin-bottom: 6px;
-    }
-    .tag-red { background: #fed7d7; color: #c53030; }
-    .tag-yellow { background: #fefcbf; color: #975a16; }
-    .tag-green { background: #c6f6d5; color: #276749; }
-    .tag-blue { background: #bee3f8; color: #2a4365; }
-    .advice-item textarea {
-      width: 100%;
-      border: none;
-      resize: vertical;
-      font-size: 0.9rem;
-      color: #2d3748;
-      line-height: 1.6;
-      font-family: inherit;
-      background: transparent;
-      outline: none;
-      min-height: 60px;
-    }
-    .advice-item .delete-btn {
-      position: absolute;
-      top: 10px; right: 10px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: #cbd5e0;
-      font-size: 1rem;
-    }
-    .advice-item .delete-btn:hover { color: #fc8181; }
-    .add-advice-row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    /* 印刷 */
-    .print-area { display: none; }
-    @media print {
-      header, .tabs, .slot-controls, .grid-controls, .btn, .add-advice-row { display: none !important; }
-      .print-area { display: block !important; }
-      body { background: white; }
-    }
-
-    /* カメラモーダル */
-    .modal-overlay {
-      display: none;
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.7);
-      z-index: 100;
-      align-items: center;
-      justify-content: center;
-    }
-    .modal-overlay.open { display: flex; }
-    .modal-box {
-      background: #1a202c;
-      border-radius: 12px;
-      padding: 20px;
-      max-width: 500px;
-      width: 95%;
-    }
-    .modal-box video {
-      width: 100%;
-      border-radius: 8px;
-      background: black;
-    }
-    .modal-actions {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      margin-top: 12px;
-    }
-
-    /* ダウンロードボタン */
-    .dl-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>姿勢チェックアプリ</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a;
+  --accent: #5b9cf6; --accent2: #a78bfa; --green: #34d399;
+  --red: #f87171; --yellow: #fbbf24; --text: #e2e8f0;
+  --muted: #64748b; --border: #2d3455;
+}
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+header { background: linear-gradient(135deg, #1e2540, #2a1f4a); padding: 14px 20px; text-align: center; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 1.3rem; background: linear-gradient(90deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+header p { font-size: 0.75rem; color: var(--muted); margin-top: 3px; }
+.tabs { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); }
+.tab-btn { flex: 1; padding: 10px 4px; border: none; background: transparent; color: var(--muted); font-size: 0.78rem; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-content { display: none; } .tab-content.active { display: block; }
+.section { padding: 14px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+.card-title { font-size: 0.82rem; font-weight: 700; color: var(--accent); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+.canvas-wrap { position: relative; background: #000; border-radius: 10px; overflow: hidden; touch-action: none; width: 100%; }
+.canvas-wrap canvas { display: block; width: 100%; height: auto; }
+.slot-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 220px; color: var(--muted); gap: 8px; font-size: 0.85rem; }
+.slot-placeholder .icon { font-size: 2.5rem; }
+.btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.btn { padding: 8px 14px; border: none; border-radius: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+.btn-blue { background: var(--accent); color: #fff; } .btn-purple { background: var(--accent2); color: #fff; }
+.btn-green { background: var(--green); color: #000; } .btn-red { background: var(--red); color: #fff; }
+.btn-dark { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+input[type="file"] { display: none; }
+.line-list { display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; margin-top: 10px; }
+.line-item { display: flex; align-items: center; gap: 8px; background: var(--surface2); border-radius: 8px; padding: 8px 10px; border: 1px solid var(--border); font-size: 0.78rem; cursor: pointer; }
+.line-item.selected { border-color: var(--accent); }
+.line-color-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.line-angle { color: var(--yellow); font-weight: 700; min-width: 54px; }
+.line-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1rem; padding: 0 4px; }
+.angle-badge { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.75); border: 1px solid var(--yellow); color: var(--yellow); font-size: 0.75rem; font-weight: 700; padding: 4px 8px; border-radius: 6px; z-index: 20; pointer-events: none; }
+.preset-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.preset-btn { padding: 5px 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.75rem; cursor: pointer; }
+.ctrl-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 0.78rem; color: var(--muted); }
+.ctrl-row input[type="range"] { flex: 1; accent-color: var(--accent); }
+.ctrl-row input[type="color"] { width: 32px; height: 24px; border: none; border-radius: 4px; cursor: pointer; background: none; }
+.ctrl-val { min-width: 36px; text-align: right; color: var(--text); font-weight: 600; }
+.mode-bar { display: flex; gap: 6px; margin-bottom: 10px; }
+.mode-btn { flex: 1; padding: 7px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); color: var(--muted); font-size: 0.72rem; font-weight: 600; cursor: pointer; text-align: center; }
+.mode-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.zoom-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.zoom-bar button { width: 32px; height: 32px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); border-radius: 6px; font-size: 1rem; cursor: pointer; }
+.zoom-val { font-size: 0.78rem; color: var(--muted); min-width: 40px; text-align: center; }
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.compare-panel { position: relative; background: #000; border-radius: 10px; overflow: hidden; }
+.compare-panel canvas { display: block; width: 100%; }
+.compare-label { position: absolute; top: 0; left: 0; right: 0; background: rgba(91,156,246,0.85); text-align: center; font-size: 0.75rem; font-weight: 700; padding: 4px; color: #fff; }
+.compare-label.after { background: rgba(52,211,153,0.85); }
+.slider-wrap { position: relative; background: #000; border-radius: 10px; overflow: hidden; touch-action: none; }
+.slider-wrap canvas { display: block; width: 100%; }
+#sliderTop { position: absolute; top: 0; left: 0; clip-path: inset(0 50% 0 0); }
+.slider-divider { position: absolute; top: 0; bottom: 0; width: 2px; background: #fff; left: 50%; z-index: 10; pointer-events: none; }
+.slider-handle-btn { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 32px; height: 32px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; box-shadow: 0 2px 8px rgba(0,0,0,0.4); z-index: 11; pointer-events: none; }
+.advice-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 10px; position: relative; }
+.advice-tag { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 700; margin-bottom: 6px; }
+.tag-red { background: #3d1515; color: var(--red); } .tag-yellow { background: #3d2e0a; color: var(--yellow); }
+.tag-green { background: #0d3322; color: var(--green); } .tag-blue { background: #0d1f3d; color: var(--accent); }
+.advice-item textarea { width: 100%; background: transparent; border: none; color: var(--text); font-size: 0.85rem; line-height: 1.5; resize: vertical; outline: none; min-height: 50px; font-family: inherit; }
+.advice-del { position: absolute; top: 8px; right: 8px; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.9rem; }
+.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; align-items: center; justify-content: center; }
+.modal.open { display: flex; }
+.modal-box { background: var(--surface); border-radius: 14px; padding: 16px; width: 95%; max-width: 480px; }
+.modal-box video { width: 100%; border-radius: 8px; background: #000; }
+.modal-actions { display: flex; gap: 10px; margin-top: 10px; justify-content: center; }
+</style>
 </head>
 <body>
-
 <header>
   <h1>📐 姿勢チェックアプリ</h1>
-  <p>写真にグリッドを重ねてビフォーアフターを比較・アドバイスを記録</p>
+  <p>線をドラッグ移動・角度測定・ピンチ拡大対応</p>
 </header>
-
 <div class="tabs">
-  <button class="tab-btn active" onclick="switchTab('capture')">📷 撮影・編集</button>
-  <button class="tab-btn" onclick="switchTab('compare')">↔ 比較</button>
-  <button class="tab-btn" onclick="switchTab('advice')">📝 アドバイス</button>
+  <button class="tab-btn active" onclick="switchTab('edit',this)">✏️ 編集</button>
+  <button class="tab-btn" onclick="switchTab('compare',this)">↔ 比較</button>
+  <button class="tab-btn" onclick="switchTab('advice',this)">📝 メモ</button>
 </div>
-
-<!-- ===== 撮影タブ ===== -->
-<div id="tab-capture" class="tab-content active">
+<div id="tab-edit" class="tab-content active">
   <div class="section">
-    <!-- グリッド設定 -->
     <div class="card">
-      <h2>⚙️ グリッド設定</h2>
-      <div class="grid-controls">
-        <label>分割数:
-          <input type="range" id="gridCount" min="2" max="20" value="8" oninput="updateGridLabel(this); redrawAll()">
-          <span id="gridCountLabel">8</span>
-        </label>
-        <label>透明度:
-          <input type="range" id="gridAlpha" min="0.1" max="1" step="0.05" value="0.5" oninput="redrawAll()">
-        </label>
-        <label>線の色:
-          <input type="color" class="color-pick" id="gridColor" value="#00e5ff" oninput="redrawAll()">
-        </label>
-        <label>線の太さ:
-          <input type="range" id="lineWidth" min="0.5" max="4" step="0.5" value="1" oninput="redrawAll()">
-        </label>
+      <div class="card-title">🖼 写真</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <button class="btn btn-blue" style="flex:1" onclick="setActiveSlot('before')" id="slotBtnBefore">● BEFORE</button>
+        <button class="btn btn-dark" style="flex:1" onclick="setActiveSlot('after')" id="slotBtnAfter">AFTER</button>
       </div>
-      <div class="toggle-row" style="margin-top:10px;">
-        <span class="toggle-label">表示:</span>
-        <label><input type="checkbox" id="showVertical" checked onchange="redrawAll()"> 縦線</label>
-        <label><input type="checkbox" id="showHorizontal" checked onchange="redrawAll()"> 横線</label>
-        <label><input type="checkbox" id="showCenter" checked onchange="redrawAll()"> 中心線強調</label>
-        <label><input type="checkbox" id="showDiag" onchange="redrawAll()"> 対角線</label>
+      <div class="btn-row">
+        <button class="btn btn-blue" onclick="triggerFile()">📁 ファイル</button>
+        <button class="btn btn-purple" onclick="openCamera()">📷 カメラ</button>
+        <button class="btn btn-dark" onclick="clearSlot()">✕ クリア</button>
+        <button class="btn btn-green" onclick="downloadCanvas()">⬇ 保存</button>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" onchange="loadFile(event)">
+    </div>
+    <div class="card" style="padding:10px;">
+      <div class="card-title">🔍 キャンバス</div>
+      <div class="zoom-bar">
+        <button onclick="zoomOut()">−</button>
+        <input type="range" id="zoomSlider" min="0.5" max="4" step="0.1" value="1" oninput="setZoom(+this.value)" style="flex:1;accent-color:var(--accent)">
+        <button onclick="zoomIn()">＋</button>
+        <span class="zoom-val" id="zoomVal">100%</span>
+        <button onclick="resetZoom()" style="font-size:0.7rem;padding:0 8px;width:auto">リセット</button>
+      </div>
+      <div class="mode-bar">
+        <button class="mode-btn active" id="modeAdd" onclick="setMode('add')">＋ 線を追加</button>
+        <button class="mode-btn" id="modeDrag" onclick="setMode('drag')">↕ 線を移動</button>
+        <button class="mode-btn" id="modePan" onclick="setMode('pan')">✋ パン</button>
+      </div>
+      <div class="canvas-wrap" id="canvasWrap">
+        <div class="slot-placeholder" id="placeholder">
+          <div class="icon">📷</div>
+          <p>写真を選択してください</p>
+        </div>
+        <canvas id="mainCanvas" style="display:none"></canvas>
+        <div class="angle-badge" id="angleBadge" style="display:none"></div>
       </div>
     </div>
-
-    <!-- 写真スロット -->
     <div class="card">
-      <h2>🖼 写真</h2>
-      <div class="photo-slots">
-        <!-- Before -->
-        <div>
-          <div class="photo-slot" id="slot-before">
-            <span class="slot-label">BEFORE</span>
-            <div class="slot-placeholder" id="placeholder-before">
-              <div class="icon">📷</div>
-              <p>写真を追加してください</p>
-            </div>
-            <canvas id="canvas-before" style="display:none"></canvas>
-          </div>
-          <div class="slot-controls">
-            <button class="btn btn-primary" onclick="triggerFile('before')">📁 ファイル選択</button>
-            <button class="btn btn-outline" onclick="openCamera('before')">📷 カメラ</button>
-            <button class="btn btn-gray" onclick="clearSlot('before')">✕</button>
-          </div>
-          <input type="file" id="file-before" accept="image/*" onchange="loadFile(event,'before')">
-        </div>
-        <!-- After -->
-        <div>
-          <div class="photo-slot" id="slot-after">
-            <span class="slot-label">AFTER</span>
-            <div class="slot-placeholder" id="placeholder-after">
-              <div class="icon">📷</div>
-              <p>写真を追加してください</p>
-            </div>
-            <canvas id="canvas-after" style="display:none"></canvas>
-          </div>
-          <div class="slot-controls">
-            <button class="btn btn-primary" onclick="triggerFile('after')">📁 ファイル選択</button>
-            <button class="btn btn-outline" onclick="openCamera('after')">📷 カメラ</button>
-            <button class="btn btn-gray" onclick="clearSlot('after')">✕</button>
-          </div>
-          <input type="file" id="file-after" accept="image/*" onchange="loadFile(event,'after')">
-        </div>
+      <div class="card-title">📏 グリッド線</div>
+      <div class="preset-row">
+        <button class="preset-btn" onclick="addPreset('h')">＋水平線</button>
+        <button class="preset-btn" onclick="addPreset('v')">＋垂直線</button>
+        <button class="preset-btn" onclick="addPresetGrid()">グリッド</button>
+        <button class="preset-btn" style="color:var(--red)" onclick="clearLines()">全削除</button>
       </div>
-      <div class="dl-row">
-        <button class="btn btn-success" onclick="downloadCanvas('before')">⬇ BEFORE保存</button>
-        <button class="btn btn-success" onclick="downloadCanvas('after')">⬇ AFTER保存</button>
+      <div class="ctrl-row">
+        <span>色</span>
+        <input type="color" id="lineColor" value="#00e5ff" onchange="updateSelectedLine()">
+        <span style="margin-left:8px">太さ</span>
+        <input type="range" id="lineWidth" min="1" max="6" value="1.5" step="0.5" oninput="updateSelectedLine();document.getElementById('lwVal').textContent=this.value">
+        <span class="ctrl-val" id="lwVal">1.5</span>
       </div>
+      <div class="ctrl-row">
+        <span>透明度</span>
+        <input type="range" id="lineAlpha" min="0.1" max="1" step="0.05" value="0.8" oninput="updateSelectedLine();document.getElementById('laVal').textContent=Math.round(this.value*100)+'%'">
+        <span class="ctrl-val" id="laVal">80%</span>
+      </div>
+      <div class="ctrl-row">
+        <span>角度</span>
+        <input type="range" id="angleSlider" min="-90" max="90" step="0.5" value="0" oninput="setSelectedAngle(+this.value)">
+        <span class="ctrl-val" id="angleVal">0.0°</span>
+      </div>
+      <div class="line-list" id="lineList"></div>
     </div>
   </div>
 </div>
-
-<!-- ===== 比較タブ ===== -->
 <div id="tab-compare" class="tab-content">
   <div class="section">
     <div class="card">
-      <h2>↔ 並列比較</h2>
-      <div class="compare-wrap">
-        <div class="compare-panel">
-          <div class="compare-badge">BEFORE</div>
-          <canvas id="cmp-before" style="margin-top:32px"></canvas>
-        </div>
-        <div class="compare-panel">
-          <div class="compare-badge" style="background:rgba(72,187,120,0.85)">AFTER</div>
-          <canvas id="cmp-after" style="margin-top:32px"></canvas>
-        </div>
+      <div class="card-title">↔ 並列比較</div>
+      <div class="compare-grid">
+        <div class="compare-panel"><div class="compare-label">BEFORE</div><canvas id="cmpBefore" style="margin-top:24px"></canvas></div>
+        <div class="compare-panel"><div class="compare-label after">AFTER</div><canvas id="cmpAfter" style="margin-top:24px"></canvas></div>
       </div>
     </div>
-
     <div class="card">
-      <h2>🎚 スライダー比較</h2>
-      <p style="font-size:0.82rem;color:#718096;margin-bottom:10px;">ドラッグして左右を比較できます</p>
+      <div class="card-title">🎚 スライダー比較</div>
       <div class="slider-wrap" id="sliderWrap">
-        <canvas id="slider-base" class="slider-canvas-base"></canvas>
-        <canvas id="slider-top" class="slider-canvas-top"></canvas>
-        <div class="slider-line" id="sliderLine">
-          <div class="slider-handle">⇔</div>
-        </div>
+        <canvas id="sliderBase"></canvas>
+        <canvas id="sliderTop"></canvas>
+        <div class="slider-divider" id="sliderDiv"></div>
+        <div class="slider-handle-btn">⇔</div>
       </div>
     </div>
   </div>
 </div>
-
-<!-- ===== アドバイスタブ ===== -->
 <div id="tab-advice" class="tab-content">
   <div class="section">
     <div class="card">
-      <div class="advice-header">
-        <h2>📝 アドバイス・メモ</h2>
-        <span class="advice-date" id="adviceDate"></span>
-      </div>
-      <div class="advice-list" id="adviceList"></div>
-      <div class="add-advice-row" style="margin-top:16px;">
-        <button class="btn btn-danger" onclick="addAdvice('red','要改善')">🔴 要改善</button>
-        <button class="btn" style="background:#f6e05e;color:#744210;" onclick="addAdvice('yellow','注意')">🟡 注意</button>
-        <button class="btn btn-success" onclick="addAdvice('green','良好')">🟢 良好</button>
-        <button class="btn btn-outline" onclick="addAdvice('blue','メモ')">🔵 メモ</button>
+      <div class="card-title">📝 アドバイス・メモ <span style="color:var(--muted);font-weight:400;margin-left:auto;font-size:0.75rem" id="advDate"></span></div>
+      <div id="advList"></div>
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn btn-red" onclick="addAdv('red','要改善')">🔴 要改善</button>
+        <button class="btn btn-dark" style="color:var(--yellow)" onclick="addAdv('yellow','注意')">🟡 注意</button>
+        <button class="btn btn-green" onclick="addAdv('green','良好')">🟢 良好</button>
+        <button class="btn btn-blue" onclick="addAdv('blue','メモ')">🔵 メモ</button>
       </div>
     </div>
-
     <div class="card">
-      <h2>📄 レポート出力</h2>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;">
-        <button class="btn btn-primary" onclick="window.print()">🖨 印刷</button>
-        <button class="btn btn-success" onclick="exportReport()">⬇ テキスト保存</button>
-      </div>
+      <div class="card-title">📄 出力</div>
+      <button class="btn btn-blue" onclick="exportTxt()">⬇ テキスト保存</button>
     </div>
   </div>
 </div>
-
-<!-- カメラモーダル -->
-<div class="modal-overlay" id="cameraModal">
+<div class="modal" id="camModal">
   <div class="modal-box">
-    <video id="cameraVideo" autoplay playsinline></video>
+    <video id="camVideo" autoplay playsinline></video>
     <div class="modal-actions">
-      <button class="btn btn-success" onclick="capturePhoto()">📸 撮影</button>
-      <button class="btn btn-danger" onclick="closeCamera()">✕ キャンセル</button>
+      <button class="btn btn-green" onclick="capturePhoto()">📸 撮影</button>
+      <button class="btn btn-red" onclick="closeCamera()">✕ キャンセル</button>
     </div>
   </div>
 </div>
-
 <canvas id="offscreen" style="display:none"></canvas>
-
 <script>
-// ===== State =====
-const images = { before: null, after: null };
-let cameraTarget = null;
-let cameraStream = null;
-
-// ===== Tabs =====
-function switchTab(name) {
-  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.add('active');
-  event.target.classList.add('active');
-  if (name === 'compare') updateCompare();
-}
-
-// ===== Grid config =====
-function cfg() {
-  return {
-    count: +document.getElementById('gridCount').value,
-    alpha: +document.getElementById('gridAlpha').value,
-    color: document.getElementById('gridColor').value,
-    lw: +document.getElementById('lineWidth').value,
-    vert: document.getElementById('showVertical').checked,
-    horiz: document.getElementById('showHorizontal').checked,
-    center: document.getElementById('showCenter').checked,
-    diag: document.getElementById('showDiag').checked,
-  };
-}
-function updateGridLabel(el) {
-  document.getElementById('gridCountLabel').textContent = el.value;
-}
-
-// ===== Draw grid on canvas =====
-function drawGrid(ctx, w, h) {
-  const c = cfg();
-  const hex = c.color;
-  const r = parseInt(hex.slice(1,3),16);
-  const g = parseInt(hex.slice(3,5),16);
-  const b = parseInt(hex.slice(5,7),16);
-
-  ctx.save();
-  ctx.strokeStyle = `rgba(${r},${g},${b},${c.alpha})`;
-  ctx.lineWidth = c.lw;
-
-  if (c.vert) {
-    for (let i = 1; i < c.count; i++) {
-      const x = w * i / c.count;
-      if (c.center && i === Math.floor(c.count / 2)) {
-        ctx.save();
-        ctx.lineWidth = c.lw * 2.5;
-        ctx.strokeStyle = `rgba(${r},${g},${b},${Math.min(c.alpha * 1.4, 1)})`;
-        ctx.setLineDash([]);
-      }
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
-      if (c.center && i === Math.floor(c.count / 2)) ctx.restore();
-    }
-  }
-  if (c.horiz) {
-    for (let i = 1; i < c.count; i++) {
-      const y = h * i / c.count;
-      if (c.center && i === Math.floor(c.count / 2)) {
-        ctx.save();
-        ctx.lineWidth = c.lw * 2.5;
-        ctx.strokeStyle = `rgba(${r},${g},${b},${Math.min(c.alpha * 1.4, 1)})`;
-      }
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-      if (c.center && i === Math.floor(c.count / 2)) ctx.restore();
-    }
-  }
-  if (c.diag) {
-    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(w,h); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(w,0); ctx.lineTo(0,h); ctx.stroke();
-  }
-  ctx.restore();
-}
-
-function redrawSlot(slot) {
-  const img = images[slot];
-  const canvas = document.getElementById('canvas-' + slot);
-  if (!img) return;
-  const maxW = canvas.parentElement.clientWidth || 400;
-  const scale = Math.min(1, maxW / img.naturalWidth);
-  canvas.width = img.naturalWidth * scale;
-  canvas.height = img.naturalHeight * scale;
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-  drawGrid(ctx, canvas.width, canvas.height);
-}
-
-function redrawAll() {
-  if (images.before) redrawSlot('before');
-  if (images.after) redrawSlot('after');
-  updateCompare();
-}
-
-// ===== File loading =====
-function triggerFile(slot) {
-  document.getElementById('file-' + slot).click();
-}
-function loadFile(event, slot) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const img = new Image();
-  img.onload = () => {
-    images[slot] = img;
-    showCanvas(slot);
-    redrawSlot(slot);
-  };
-  img.src = URL.createObjectURL(file);
-}
-
-function showCanvas(slot) {
-  document.getElementById('placeholder-' + slot).style.display = 'none';
-  const canvas = document.getElementById('canvas-' + slot);
-  canvas.style.display = 'block';
-  document.getElementById('slot-' + slot).style.border = '2px solid #667eea';
-}
-function clearSlot(slot) {
-  images[slot] = null;
-  const canvas = document.getElementById('canvas-' + slot);
-  canvas.style.display = 'none';
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  document.getElementById('placeholder-' + slot).style.display = 'flex';
-  document.getElementById('slot-' + slot).style.border = '2px dashed #cbd5e0';
-  document.getElementById('file-' + slot).value = '';
-}
-
-// ===== Camera =====
-function openCamera(slot) {
-  cameraTarget = slot;
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
-    .then(stream => {
-      cameraStream = stream;
-      document.getElementById('cameraVideo').srcObject = stream;
-      document.getElementById('cameraModal').classList.add('open');
-    })
-    .catch(() => alert('カメラへのアクセスが許可されていません。\nファイル選択をお使いください。'));
-}
-function capturePhoto() {
-  const video = document.getElementById('cameraVideo');
-  const offscreen = document.getElementById('offscreen');
-  offscreen.width = video.videoWidth;
-  offscreen.height = video.videoHeight;
-  offscreen.getContext('2d').drawImage(video, 0, 0);
-  const img = new Image();
-  img.onload = () => {
-    images[cameraTarget] = img;
-    showCanvas(cameraTarget);
-    redrawSlot(cameraTarget);
-  };
-  img.src = offscreen.toDataURL('image/png');
-  closeCamera();
-}
-function closeCamera() {
-  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
-  document.getElementById('cameraModal').classList.remove('open');
-  document.getElementById('cameraVideo').srcObject = null;
-}
-
-// ===== Download =====
-function downloadCanvas(slot) {
-  const canvas = document.getElementById('canvas-' + slot);
-  if (!images[slot]) { alert('写真がありません'); return; }
-  const a = document.createElement('a');
-  a.download = `posture_${slot}_${new Date().toISOString().slice(0,10)}.png`;
-  a.href = canvas.toDataURL('image/png');
-  a.click();
-}
-
-// ===== Compare =====
-function updateCompare() {
-  ['before','after'].forEach(slot => {
-    const src = document.getElementById('canvas-' + slot);
-    const dst = document.getElementById('cmp-' + slot);
-    if (!images[slot]) { const c = dst.getContext('2d'); c.clearRect(0,0,dst.width,dst.height); return; }
-    dst.width = src.width;
-    dst.height = src.height;
-    dst.getContext('2d').drawImage(src, 0, 0);
-    dst.style.width = '100%';
-  });
-  updateSlider();
-}
-
-// ===== Slider =====
-function updateSlider() {
-  const wrap = document.getElementById('sliderWrap');
-  const base = document.getElementById('slider-base');
-  const top = document.getElementById('slider-top');
-  const line = document.getElementById('sliderLine');
-  const handle = line.querySelector('.slider-handle');
-
-  const srcBefore = document.getElementById('canvas-before');
-  const srcAfter = document.getElementById('canvas-after');
-  if (!images.before && !images.after) return;
-
-  const w = Math.max(srcBefore.width || 0, srcAfter.width || 0) || 600;
-  const h = Math.max(srcBefore.height || 0, srcAfter.height || 0) || 400;
-
-  base.width = w; base.height = h;
-  top.width = w; top.height = h;
-
-  const bCtx = base.getContext('2d');
-  const tCtx = top.getContext('2d');
-  bCtx.clearRect(0,0,w,h);
-  tCtx.clearRect(0,0,w,h);
-
-  if (images.before) bCtx.drawImage(srcBefore, 0, 0, w, h);
-  if (images.after) tCtx.drawImage(srcAfter, 0, 0, w, h);
-
-  base.style.width = '100%';
-  top.style.width = '100%';
-
-  // Label overlay
-  bCtx.fillStyle = 'rgba(0,0,0,0.45)';
-  bCtx.fillRect(0,0,w,32);
-  bCtx.fillStyle = 'white';
-  bCtx.font = `bold ${Math.round(w*0.04)}px Segoe UI`;
-  bCtx.fillText('BEFORE', 12, 22);
-
-  tCtx.fillStyle = 'rgba(0,0,0,0.45)';
-  tCtx.fillRect(0,0,w,32);
-  tCtx.fillStyle = 'white';
-  tCtx.font = `bold ${Math.round(w*0.04)}px Segoe UI`;
-  tCtx.textAlign = 'right';
-  tCtx.fillText('AFTER', w-12, 22);
-  tCtx.textAlign = 'left';
-
-  setSliderPos(0.5);
-}
-
-let sliderDragging = false;
-function setSliderPos(frac) {
-  const top = document.getElementById('slider-top');
-  const line = document.getElementById('sliderLine');
-  const w = document.getElementById('sliderWrap').offsetWidth;
-  const px = Math.round(frac * w);
-  top.style.clipPath = `inset(0 ${w - px}px 0 0)`;
-  line.style.left = px + 'px';
-}
-
-document.getElementById('sliderWrap').addEventListener('mousedown', e => { sliderDragging = true; moveSlider(e); });
-document.getElementById('sliderWrap').addEventListener('touchstart', e => { sliderDragging = true; moveSlider(e.touches[0]); }, {passive:true});
-document.addEventListener('mousemove', e => { if (sliderDragging) moveSlider(e); });
-document.addEventListener('touchmove', e => { if (sliderDragging) moveSlider(e.touches[0]); }, {passive:true});
-document.addEventListener('mouseup', () => sliderDragging = false);
-document.addEventListener('touchend', () => sliderDragging = false);
-
-function moveSlider(e) {
-  const wrap = document.getElementById('sliderWrap');
-  const rect = wrap.getBoundingClientRect();
-  const frac = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-  setSliderPos(frac);
-}
-
-// ===== Advice =====
-const tagMap = { red:'tag-red', yellow:'tag-yellow', green:'tag-green', blue:'tag-blue' };
-let advices = [];
-
-document.getElementById('adviceDate').textContent = new Date().toLocaleDateString('ja-JP', {year:'numeric',month:'long',day:'numeric'});
-
-function addAdvice(color, label) {
-  const id = Date.now();
-  advices.push({ id, color, label, text: '' });
-  renderAdvices();
-  const ta = document.querySelector(`[data-id="${id}"] textarea`);
-  if (ta) ta.focus();
-}
-function deleteAdvice(id) {
-  advices = advices.filter(a => a.id !== id);
-  renderAdvices();
-}
-function renderAdvices() {
-  const list = document.getElementById('adviceList');
-  list.innerHTML = advices.map(a => `
-    <div class="advice-item" data-id="${a.id}">
-      <span class="advice-tag ${tagMap[a.color]}">${a.label}</span>
-      <button class="delete-btn" onclick="deleteAdvice(${a.id})">✕</button>
-      <textarea placeholder="アドバイスやメモを入力..." oninput="syncText(${a.id}, this.value)">${a.text}</textarea>
-    </div>
-  `).join('');
-}
-function syncText(id, val) {
-  const a = advices.find(x => x.id === id);
-  if (a) a.text = val;
-}
-
-function exportReport() {
-  const lines = [`姿勢チェックレポート\n日付: ${new Date().toLocaleDateString('ja-JP')}\n`];
-  advices.forEach(a => {
-    lines.push(`[${a.label}] ${a.text || '(未入力)'}`);
-  });
-  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
-  const el = document.createElement('a');
-  el.href = url;
-  el.download = `posture_report_${new Date().toISOString().slice(0,10)}.txt`;
-  el.click();
-  URL.revokeObjectURL(url);
-}
-
-// ===== Initial advice templates =====
-const templates = [
-  { color: 'blue', label: 'メモ', text: '撮影日: ' + new Date().toLocaleDateString('ja-JP') },
-  { color: 'red', label: '要改善', text: '' },
-  { color: 'green', label: '良好', text: '' },
-];
-templates.forEach(t => {
-  advices.push({ id: Date.now() + Math.random(), ...t });
-});
-renderAdvices();
+const slots={before:{img:null,lines:[],zoom:1,panX:0,panY:0},after:{img:null,lines:[],zoom:1,panX:0,panY:0}};
+let activeSlot='before',mode='add',selectedLineIdx=-1,dragState=null,pinchState=null,camStream=null;
+const canvas=document.getElementById('mainCanvas'),ctx=canvas.getContext('2d');
+function switchTab(name,btn){document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active'));document.getElementById('tab-'+name).classList.add('active');btn.classList.add('active');if(name==='compare')updateCompare();}
+function setActiveSlot(s){activeSlot=s;document.getElementById('slotBtnBefore').className='btn '+(s==='before'?'btn-blue':'btn-dark');document.getElementById('slotBtnAfter').className='btn '+(s==='after'?'btn-green':'btn-dark');selectedLineIdx=-1;if(slots[s].img){setupCanvas();canvas.style.display='block';document.getElementById('placeholder').style.display='none';}else{canvas.style.display='none';document.getElementById('placeholder').style.display='flex';}document.getElementById('zoomSlider').value=slots[s].zoom;document.getElementById('zoomVal').textContent=Math.round(slots[s].zoom*100)+'%';render();renderLineList();syncAngleSlider();}
+function triggerFile(){document.getElementById('fileInput').click();}
+function loadFile(e){const file=e.target.files[0];if(!file)return;const img=new Image();img.onload=()=>{slots[activeSlot].img=img;slots[activeSlot].zoom=1;slots[activeSlot].panX=0;slots[activeSlot].panY=0;setupCanvas();render();document.getElementById('placeholder').style.display='none';canvas.style.display='block';};img.src=URL.createObjectURL(file);e.target.value='';}
+function clearSlot(){slots[activeSlot].img=null;slots[activeSlot].lines=[];slots[activeSlot].zoom=1;selectedLineIdx=-1;ctx.clearRect(0,0,canvas.width,canvas.height);canvas.style.display='none';document.getElementById('placeholder').style.display='flex';renderLineList();}
+function downloadCanvas(){if(!slots[activeSlot].img){alert('写真がありません');return;}const tmp=document.createElement('canvas');const img=slots[activeSlot].img;tmp.width=img.naturalWidth;tmp.height=img.naturalHeight;const tc=tmp.getContext('2d');tc.drawImage(img,0,0);drawLinesOnCtx(tc,tmp.width,tmp.height,slots[activeSlot].lines);const a=document.createElement('a');a.download=`posture_${activeSlot}_${new Date().toISOString().slice(0,10)}.png`;a.href=tmp.toDataURL('image/png');a.click();}
+function setupCanvas(){const wrap=document.getElementById('canvasWrap');const img=slots[activeSlot].img;if(!img)return;const maxW=wrap.clientWidth;canvas.width=maxW;canvas.height=maxW*(img.naturalHeight/img.naturalWidth);}
+function setZoom(v){slots[activeSlot].zoom=v;document.getElementById('zoomSlider').value=v;document.getElementById('zoomVal').textContent=Math.round(v*100)+'%';render();}
+function zoomIn(){setZoom(Math.min(4,slots[activeSlot].zoom+0.25));}
+function zoomOut(){setZoom(Math.max(0.5,slots[activeSlot].zoom-0.25));}
+function resetZoom(){slots[activeSlot].panX=0;slots[activeSlot].panY=0;setZoom(1);}
+function setMode(m){mode=m;['Add','Drag','Pan'].forEach(x=>{const el=document.getElementById('mode'+x);if(el)el.classList.toggle('active',x.toLowerCase()===m);});canvas.style.cursor=m==='pan'?'grab':m==='drag'?'move':'crosshair';}
+function getLines(){return slots[activeSlot].lines;}
+function addPreset(type){const lines=getLines();const color=document.getElementById('lineColor').value;const lw=+document.getElementById('lineWidth').value;const alpha=+document.getElementById('lineAlpha').value;lines.push({type,pos:0.5,angle:0,color,lw,alpha});selectedLineIdx=lines.length-1;render();renderLineList();syncAngleSlider();}
+function addPresetGrid(){const lines=getLines();const color=document.getElementById('lineColor').value;const lw=+document.getElementById('lineWidth').value;const alpha=+document.getElementById('lineAlpha').value;[0.25,0.5,0.75].forEach(p=>{lines.push({type:'h',pos:p,angle:0,color,lw,alpha});lines.push({type:'v',pos:p,angle:0,color,lw,alpha});});render();renderLineList();}
+function clearLines(){slots[activeSlot].lines=[];selectedLineIdx=-1;render();renderLineList();}
+function deleteLine(idx){getLines().splice(idx,1);if(selectedLineIdx>=getLines().length)selectedLineIdx=getLines().length-1;render();renderLineList();syncAngleSlider();}
+function updateSelectedLine(){if(selectedLineIdx<0)return;const line=getLines()[selectedLineIdx];if(!line)return;line.color=document.getElementById('lineColor').value;line.lw=+document.getElementById('lineWidth').value;line.alpha=+document.getElementById('lineAlpha').value;render();renderLineList();}
+function setSelectedAngle(deg){if(selectedLineIdx<0)return;const line=getLines()[selectedLineIdx];if(!line)return;line.angle=deg;document.getElementById('angleVal').textContent=deg.toFixed(1)+'°';render();renderLineList();}
+function syncAngleSlider(){const line=selectedLineIdx>=0?getLines()[selectedLineIdx]:null;const deg=line?line.angle:0;document.getElementById('angleSlider').value=deg;document.getElementById('angleVal').textContent=deg.toFixed(1)+'°';if(line){document.getElementById('lineColor').value=line.color;document.getElementById('lineWidth').value=line.lw;document.getElementById('lineAlpha').value=line.alpha;document.getElementById('lwVal').textContent=line.lw;document.getElementById('laVal').textContent=Math.round(line.alpha*100)+'%';}}
+function renderLineList(){const list=document.getElementById('lineList');const lines=getLines();if(lines.length===0){list.innerHTML='<div style="color:var(--muted);font-size:0.78rem;padding:6px 0">上のボタンで線を追加してください</div>';return;}list.innerHTML=lines.map((l,i)=>`<div class="line-item ${i===selectedLineIdx?'selected':''}" onclick="selectLine(${i})"><div class="line-color-dot" style="background:${l.color}"></div><span style="color:var(--muted);flex:1;font-size:0.75rem">${l.type==='h'?'水平':'垂直'} ${Math.round(l.pos*100)}%</span><span class="line-angle">${l.angle>=0?'+':''}${l.angle.toFixed(1)}°</span><button class="line-del" onclick="event.stopPropagation();deleteLine(${i})">✕</button></div>`).join('');}
+function selectLine(idx){selectedLineIdx=idx;syncAngleSlider();render();renderLineList();}
+function hexToRgb(hex){return[parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)];}
+function drawLinesOnCtx(c,w,h,lines){lines.forEach(line=>{const[r,g,b]=hexToRgb(line.color);c.save();c.strokeStyle=`rgba(${r},${g},${b},${line.alpha})`;c.lineWidth=line.lw;const rad=line.angle*Math.PI/180;if(line.type==='h'){const by=h*line.pos,bx=w/2;const len=w*1.5,dx=Math.cos(rad)*len/2,dy=Math.sin(rad)*len/2;c.beginPath();c.moveTo(bx-dx,by-dy);c.lineTo(bx+dx,by+dy);}else{const bx=w*line.pos,by=h/2;const baseRad=rad+Math.PI/2,len=h*1.5;const dx=Math.cos(baseRad)*len/2,dy=Math.sin(baseRad)*len/2;c.beginPath();c.moveTo(bx-dx,by-dy);c.lineTo(bx+dx,by+dy);}c.stroke();c.restore();});}
+function render(){const slot=slots[activeSlot];const img=slot.img;if(!img)return;setupCanvas();const w=canvas.width,h=canvas.height;const zoom=slot.zoom,panX=slot.panX||0,panY=slot.panY||0;ctx.clearRect(0,0,w,h);ctx.save();ctx.translate(w/2+panX,h/2+panY);ctx.scale(zoom,zoom);ctx.drawImage(img,-w/2,-h/2,w,h);ctx.restore();const imgW=w*zoom,imgH=h*zoom;const originX=w/2+panX-imgW/2,originY=h/2+panY-imgH/2;getLines().forEach((line,i)=>{const[r,g,b]=hexToRgb(line.color);const isSelected=i===selectedLineIdx;ctx.save();ctx.strokeStyle=`rgba(${r},${g},${b},${line.alpha})`;ctx.lineWidth=line.lw*(isSelected?2.5:1);if(isSelected){ctx.shadowColor=line.color;ctx.shadowBlur=8;}const rad=line.angle*Math.PI/180;if(line.type==='h'){const by=originY+line.pos*imgH,bx=w/2+panX;const len=imgW*2,dx=Math.cos(rad)*len/2,dy=Math.sin(rad)*len/2;ctx.beginPath();ctx.moveTo(bx-dx,by-dy);ctx.lineTo(bx+dx,by+dy);}else{const bx=originX+line.pos*imgW,by=h/2+panY;const baseRad=rad+Math.PI/2,len=imgH*2;const dx=Math.cos(baseRad)*len/2,dy=Math.sin(baseRad)*len/2;ctx.beginPath();ctx.moveTo(bx-dx,by-dy);ctx.lineTo(bx+dx,by+dy);}ctx.stroke();ctx.restore();});const badge=document.getElementById('angleBadge');if(selectedLineIdx>=0&&getLines()[selectedLineIdx]){const line=getLines()[selectedLineIdx];badge.style.display='block';badge.textContent=`${line.type==='h'?'水平':'垂直'} ${line.angle>=0?'+':''}${line.angle.toFixed(1)}°`;}else{badge.style.display='none';}document.getElementById('zoomSlider').value=slot.zoom;document.getElementById('zoomVal').textContent=Math.round(slot.zoom*100)+'%';}
+function getCanvasPos(e){const rect=canvas.getBoundingClientRect();return{x:(e.clientX-rect.left)*(canvas.width/rect.width),y:(e.clientY-rect.top)*(canvas.height/rect.height)};}
+function getLineHitIdx(x,y){const slot=slots[activeSlot];const zoom=slot.zoom,panX=slot.panX||0,panY=slot.panY||0;const w=canvas.width,h=canvas.height;const imgW=w*zoom,imgH=h*zoom;const originX=w/2+panX-imgW/2,originY=h/2+panY-imgH/2;const HIT=20;for(let i=getLines().length-1;i>=0;i--){const line=getLines()[i];const rad=line.angle*Math.PI/180;let dist;if(line.type==='h'){const by=originY+line.pos*imgH,bx=w/2+panX;const cos=Math.cos(rad),sin=Math.sin(rad);dist=Math.abs(-sin*(x-bx)+cos*(y-by));}else{const bx=originX+line.pos*imgW,by=h/2+panY;const baseRad=rad+Math.PI/2;const cos=Math.cos(baseRad),sin=Math.sin(baseRad);dist=Math.abs(-sin*(x-bx)+cos*(y-by));}if(dist<HIT)return i;}return -1;}
+function addLineAt(x,y){const slot=slots[activeSlot];const zoom=slot.zoom,panX=slot.panX||0,panY=slot.panY||0;const w=canvas.width,h=canvas.height;const imgW=w*zoom,imgH=h*zoom;const originY=h/2+panY-imgH/2;const posH=Math.max(0.05,Math.min(0.95,(y-originY)/imgH));const color=document.getElementById('lineColor').value;const lw=+document.getElementById('lineWidth').value;const alpha=+document.getElementById('lineAlpha').value;const lines=slot.lines;lines.push({type:'h',pos:posH,angle:0,color,lw,alpha});selectedLineIdx=lines.length-1;render();renderLineList();syncAngleSlider();}
+function handleDragMove(x,y){const dx=x-dragState.startX,dy=y-dragState.startY;const slot=slots[activeSlot];if(mode==='drag'&&selectedLineIdx>=0){const line=getLines()[selectedLineIdx];const zoom=slot.zoom,w=canvas.width,h=canvas.height;if(line.type==='h')line.pos=Math.max(0.01,Math.min(0.99,dragState.origPos+dy/(h*zoom)));else line.pos=Math.max(0.01,Math.min(0.99,dragState.origPos+dx/(w*zoom)));render();renderLineList();}else if(mode==='pan'){slot.panX=dragState.origPanX+dx;slot.panY=dragState.origPanY+dy;render();}}
+canvas.addEventListener('mousedown',e=>{const pos=getCanvasPos(e);if(mode==='drag'){const hit=getLineHitIdx(pos.x,pos.y);if(hit>=0){selectedLineIdx=hit;dragState={startX:pos.x,startY:pos.y,origPos:getLines()[hit].pos};render();renderLineList();syncAngleSlider();}}else if(mode==='pan'){dragState={startX:pos.x,startY:pos.y,origPanX:slots[activeSlot].panX||0,origPanY:slots[activeSlot].panY||0};}else if(mode==='add'){if(slots[activeSlot].img)addLineAt(pos.x,pos.y);}});
+canvas.addEventListener('mousemove',e=>{if(!dragState)return;const pos=getCanvasPos(e);handleDragMove(pos.x,pos.y);});
+canvas.addEventListener('mouseup',()=>dragState=null);
+canvas.addEventListener('touchstart',e=>{if(e.touches.length===2){pinchState={dist:Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY),zoom:slots[activeSlot].zoom};return;}e.preventDefault();const t=e.touches[0],pos=getCanvasPos(t);if(mode==='drag'){const hit=getLineHitIdx(pos.x,pos.y);if(hit>=0){selectedLineIdx=hit;dragState={startX:pos.x,startY:pos.y,origPos:getLines()[hit].pos};render();renderLineList();syncAngleSlider();}}else if(mode==='pan'){dragState={startX:pos.x,startY:pos.y,origPanX:slots[activeSlot].panX||0,origPanY:slots[activeSlot].panY||0};}else if(mode==='add'){if(slots[activeSlot].img)addLineAt(pos.x,pos.y);}},{passive:false});
+canvas.addEventListener('touchmove',e=>{if(e.touches.length===2&&pinchState){e.preventDefault();const newDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);setZoom(Math.max(0.5,Math.min(4,pinchState.zoom*(newDist/pinchState.dist))));return;}if(!dragState)return;e.preventDefault();const pos=getCanvasPos(e.touches[0]);handleDragMove(pos.x,pos.y);},{passive:false});
+canvas.addEventListener('touchend',()=>{dragState=null;pinchState=null;});
+function openCamera(){navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false}).then(stream=>{camStream=stream;document.getElementById('camVideo').srcObject=stream;document.getElementById('camModal').classList.add('open');}).catch(()=>alert('カメラにアクセスできません。ファイル選択をご利用ください。'));}
+function capturePhoto(){const video=document.getElementById('camVideo'),off=document.getElementById('offscreen');off.width=video.videoWidth;off.height=video.videoHeight;off.getContext('2d').drawImage(video,0,0);const img=new Image();img.onload=()=>{slots[activeSlot].img=img;slots[activeSlot].zoom=1;slots[activeSlot].panX=0;slots[activeSlot].panY=0;setupCanvas();render();document.getElementById('placeholder').style.display='none';canvas.style.display='block';};img.src=off.toDataURL('image/png');closeCamera();}
+function closeCamera(){if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;}document.getElementById('camModal').classList.remove('open');document.getElementById('camVideo').srcObject=null;}
+function renderToCanvas(dst,slotName){const slot=slots[slotName];if(!slot.img){dst.width=300;dst.height=200;return;}const img=slot.img;dst.width=300;dst.height=Math.round(300*img.naturalHeight/img.naturalWidth);const c=dst.getContext('2d');c.drawImage(img,0,0,dst.width,dst.height);drawLinesOnCtx(c,dst.width,dst.height,slot.lines);}
+function updateCompare(){renderToCanvas(document.getElementById('cmpBefore'),'before');renderToCanvas(document.getElementById('cmpAfter'),'after');updateSlider();}
+let sliderDragging=false;
+function updateSlider(){const base=document.getElementById('sliderBase'),top=document.getElementById('sliderTop');const bSlot=slots.before,aSlot=slots.after;if(!bSlot.img&&!aSlot.img)return;const refImg=bSlot.img||aSlot.img;const ratio=refImg.naturalHeight/refImg.naturalWidth;const w=600,h=Math.round(600*ratio);base.width=w;base.height=h;top.width=w;top.height=h;const bc=base.getContext('2d'),tc=top.getContext('2d');if(bSlot.img){bc.drawImage(bSlot.img,0,0,w,h);drawLinesOnCtx(bc,w,h,bSlot.lines);}if(aSlot.img){tc.drawImage(aSlot.img,0,0,w,h);drawLinesOnCtx(tc,w,h,aSlot.lines);}bc.fillStyle='rgba(0,0,0,0.5)';bc.fillRect(0,0,w,28);bc.fillStyle='#fff';bc.font='bold 16px Segoe UI';bc.fillText('BEFORE',10,20);tc.fillStyle='rgba(0,0,0,0.5)';tc.fillRect(0,0,w,28);tc.fillStyle='#fff';tc.font='bold 16px Segoe UI';tc.textAlign='right';tc.fillText('AFTER',w-10,20);tc.textAlign='left';setSliderFrac(0.5);}
+function setSliderFrac(f){const wrap=document.getElementById('sliderWrap');const top=document.getElementById('sliderTop');const div=document.getElementById('sliderDiv');const hndl=document.querySelector('.slider-handle-btn');const W=wrap.offsetWidth||300;const px=Math.round(f*W);top.style.clipPath=`inset(0 ${W-px}px 0 0)`;div.style.left=px+'px';if(hndl)hndl.style.left=px+'px';}
+const sliderWrap=document.getElementById('sliderWrap');
+function sliderMove(cx){const rect=sliderWrap.getBoundingClientRect();setSliderFrac(Math.max(0,Math.min(1,(cx-rect.left)/rect.width)));}
+sliderWrap.addEventListener('mousedown',e=>{sliderDragging=true;sliderMove(e.clientX);});
+sliderWrap.addEventListener('touchstart',e=>{sliderDragging=true;sliderMove(e.touches[0].clientX);},{passive:true});
+document.addEventListener('mousemove',e=>{if(sliderDragging)sliderMove(e.clientX);});
+document.addEventListener('touchmove',e=>{if(sliderDragging)sliderMove(e.touches[0].clientX);},{passive:true});
+document.addEventListener('mouseup',()=>sliderDragging=false);
+document.addEventListener('touchend',()=>sliderDragging=false);
+let advices=[];
+document.getElementById('advDate').textContent=new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'});
+const tagMap={red:'tag-red',yellow:'tag-yellow',green:'tag-green',blue:'tag-blue'};
+function addAdv(color,label){const id=Date.now()+Math.random();advices.push({id,color,label,text:''});renderAdvices();setTimeout(()=>{const ta=document.querySelector(`[data-adv-id="${id}"] textarea`);if(ta)ta.focus();},50);}
+function delAdv(id){advices=advices.filter(a=>a.id!==id);renderAdvices();}
+function renderAdvices(){const list=document.getElementById('advList');if(!advices.length){list.innerHTML='<div style="color:var(--muted);font-size:0.82rem;padding:8px 0">下のボタンでメモを追加</div>';return;}list.innerHTML=advices.map(a=>`<div class="advice-item" data-adv-id="${a.id}"><span class="advice-tag ${tagMap[a.color]}">${a.label}</span><button class="advice-del" onclick="delAdv(${a.id})">✕</button><textarea placeholder="アドバイスを入力..." oninput="syncAdv(${a.id},this.value)">${a.text}</textarea></div>`).join('');}
+function syncAdv(id,val){const a=advices.find(x=>x.id===id);if(a)a.text=val;}
+function exportTxt(){const lines=[`姿勢チェックレポート\n日付: ${new Date().toLocaleDateString('ja-JP')}\n`];advices.forEach(a=>lines.push(`[${a.label}] ${a.text||'(未入力)'}`));const blob=new Blob([lines.join('\n')],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`posture_report_${new Date().toISOString().slice(0,10)}.txt`;a.click();}
+renderAdvices();renderLineList();setMode('add');
 </script>
 </body>
 </html>
