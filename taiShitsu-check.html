@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>東洋医学 体質判別チェック</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600;700&family=Noto+Sans+JP:wght@300;400;500&display=swap');
+
+  :root {
+    --primary: #C4621A;
+    --primary-light: #E8A870;
+    --primary-pale: #F5DEC8;
+    --bg: #FDF8F3;
+    --bg-card: #FFFFFF;
+    --text: #2C1A0E;
+    --text-light: #7A5C42;
+    --border: #E8D5C0;
+    --accent: #8B3A0A;
+    --line-green: #00B900;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    color: white;
+    padding: 2rem 1rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(circle at 30% 50%, rgba(255,255,255,0.08) 0%, transparent 60%);
+  }
+  header h1 {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    position: relative;
+  }
+  header p {
+    font-size: 0.8rem;
+    opacity: 0.85;
+    margin-top: 0.4rem;
+    position: relative;
+  }
+
+  .container { max-width: 700px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+
+  .progress-bar {
+    background: var(--border);
+    border-radius: 999px;
+    height: 6px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-light), var(--primary));
+    border-radius: 999px;
+    transition: width 0.4s ease;
+  }
+  .progress-label {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    text-align: right;
+    margin-bottom: 0.4rem;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+    padding: 0.6rem 1rem;
+    background: var(--primary-pale);
+    border-left: 4px solid var(--primary);
+    border-radius: 0 8px 8px 0;
+  }
+  .section-header .section-name {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .question-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.2rem 1.2rem 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(196,98,26,0.06);
+    transition: box-shadow 0.2s;
+  }
+  .question-card:hover { box-shadow: 0 4px 16px rgba(196,98,26,0.12); }
+
+  .question-text {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--text);
+    margin-bottom: 0.9rem;
+  }
+
+  .options {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .option-btn {
+    flex: 1;
+    min-width: 70px;
+    padding: 0.5rem 0.3rem;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    background: white;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.8rem;
+    color: var(--text-light);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .option-btn:hover { border-color: var(--primary-light); color: var(--primary); }
+  .option-btn.selected {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: white;
+    font-weight: 500;
+  }
+
+  .nav-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+  .btn {
+    flex: 1;
+    padding: 0.9rem;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-back {
+    background: white;
+    border: 2px solid var(--border);
+    color: var(--text-light);
+  }
+  .btn-back:hover { border-color: var(--primary-light); }
+  .btn-next {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(196,98,26,0.3);
+  }
+  .btn-next:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(196,98,26,0.4); }
+  .btn-next:disabled { opacity: 0.4; transform: none; cursor: not-allowed; }
+
+  .result-container { display: none; }
+  .result-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1.4rem;
+    color: var(--accent);
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .radar-wrapper {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 16px rgba(196,98,26,0.08);
+  }
+
+  canvas#radarChart {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+  }
+
+  .scores-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.7rem;
+    margin-bottom: 1.5rem;
+  }
+  .score-item {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.8rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .score-item.highlighted {
+    border-color: var(--primary);
+    background: var(--primary-pale);
+  }
+  .score-name { font-size: 0.9rem; color: var(--text); }
+  .score-val {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--primary);
+  }
+
+  .constitution-block {
+    background: linear-gradient(135deg, var(--primary-pale) 0%, #FFF 100%);
+    border: 1px solid var(--primary-light);
+    border-radius: 14px;
+    padding: 1.4rem;
+    margin-bottom: 1rem;
+  }
+  .constitution-block h3 {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1.1rem;
+    color: var(--accent);
+    margin-bottom: 0.6rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .constitution-block p { font-size: 0.88rem; line-height: 1.7; color: var(--text-light); }
+
+  .yinyang-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.7rem;
+    margin-bottom: 1.5rem;
+  }
+  .yinyang-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.9rem;
+    text-align: center;
+  }
+  .yinyang-card .label { font-size: 0.78rem; color: var(--text-light); margin-bottom: 0.3rem; }
+  .yinyang-card .val {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary);
+  }
+  .yinyang-card .judge {
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-top: 0.2rem;
+    color: var(--accent);
+  }
+
+  /* LINE送信ボタン */
+  .line-send-section {
+    background: linear-gradient(135deg, #E8F5E8 0%, #F0FAF0 100%);
+    border: 1px solid #A8DBA8;
+    border-radius: 16px;
+    padding: 1.4rem;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+  .line-send-section p {
+    font-size: 0.85rem;
+    color: #2D6A2D;
+    margin-bottom: 1rem;
+    line-height: 1.6;
+  }
+  .line-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 1rem 1.5rem;
+    background: var(--line-green);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    box-shadow: 0 4px 14px rgba(0,185,0,0.35);
+    transition: all 0.2s;
+  }
+  .line-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,185,0,0.45); }
+  .line-btn svg { flex-shrink: 0; }
+
+  .retry-btn {
+    width: 100%;
+    padding: 1rem;
+    background: white;
+    border: 2px solid var(--primary);
+    border-radius: 10px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.95rem;
+    color: var(--primary);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 1rem;
+  }
+  .retry-btn:hover { background: var(--primary); color: white; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .intro-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 20px rgba(196,98,26,0.08);
+    margin-bottom: 1.5rem;
+  }
+  .intro-card .icon { font-size: 3rem; margin-bottom: 1rem; }
+  .intro-card h2 {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1.2rem;
+    color: var(--accent);
+    margin-bottom: 0.8rem;
+  }
+  .intro-card p { font-size: 0.88rem; line-height: 1.8; color: var(--text-light); }
+
+  .start-btn {
+    width: 100%;
+    padding: 1.1rem;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(196,98,26,0.35);
+    transition: all 0.2s;
+  }
+  .start-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(196,98,26,0.4); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>東洋医学 体質判別チェック</h1>
+  <p>脾虚・腎陽虚・血虚・陰虚・気滞・湿熱・血瘀・湿痰</p>
+</header>
+
+<div class="container">
+
+  <!-- Intro -->
+  <div class="page active" id="page-intro">
+    <div class="intro-card">
+      <div class="icon">🌿</div>
+      <h2>あなたの体質を診断します</h2>
+      <p>
+        全身の症状・外見的な観察所見など、<br>
+        50問以上の質問に答えるだけで<br>
+        8つの体質タイプの傾向を<br>
+        レーダーチャートで表示します。<br><br>
+        <strong>当てはまる度合いで選んでください。</strong>
+      </p>
+    </div>
+    <button class="start-btn" onclick="startQuiz()">チェックを開始する →</button>
+  </div>
+
+  <!-- Quiz -->
+  <div class="page" id="page-quiz">
+    <div class="progress-label" id="progressLabel">1 / 1</div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+    <div id="sectionHeader" class="section-header">
+      <span class="section-name" id="sectionName"></span>
+    </div>
+
+    <div id="questionArea"></div>
+
+    <div class="nav-buttons">
+      <button class="btn btn-back" id="backBtn" onclick="prevPage()">← 戻る</button>
+      <button class="btn btn-next" id="nextBtn" onclick="nextPage()">次へ →</button>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div class="page" id="page-result">
+    <h2 class="result-title">🌿 体質診断の結果</h2>
+
+    <div class="yinyang-row">
+      <div class="yinyang-card">
+        <div class="label">虚証（A+B+C+D）</div>
+        <div class="val" id="kyoVal">-</div>
+        <div class="judge" id="kyoJudge"></div>
+      </div>
+      <div class="yinyang-card">
+        <div class="label">実証（E+F+G+H）</div>
+        <div class="val" id="jitsuVal">-</div>
+        <div class="judge" id="jitsuJudge"></div>
+      </div>
+      <div class="yinyang-card">
+        <div class="label">陰証（A+B+G+H）</div>
+        <div class="val" id="inVal">-</div>
+        <div class="judge" id="inJudge"></div>
+      </div>
+      <div class="yinyang-card">
+        <div class="label">陽証（C+D+E+F）</div>
+        <div class="val" id="yoVal">-</div>
+        <div class="judge" id="yoJudge"></div>
+      </div>
+    </div>
+
+    <div class="radar-wrapper">
+      <canvas id="radarChart" width="340" height="340"></canvas>
+    </div>
+
+    <div class="scores-grid" id="scoresGrid"></div>
+
+    <div id="constitutionBlocks"></div>
+
+    <!-- LINE送信セクション -->
+    <div class="line-send-section">
+      <p>🌿 診断結果を如水鍼灸院にLINEで送ることができます。<br>施術前の参考にさせていただきます。</p>
+      <a id="lineSendBtn" href="#" class="line-btn" target="_blank">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+          <path d="M12 2C6.48 2 2 5.92 2 10.72c0 2.93 1.58 5.53 4.03 7.22L5 21l3.28-1.72c1.2.33 2.45.5 3.72.5 5.52 0 10-3.92 10-8.78C22 5.92 17.52 2 12 2zm1.03 11.83l-2.56-2.72-4.97 2.72 5.47-5.82 2.63 2.72 4.9-2.72-5.47 5.82z"/>
+        </svg>
+        LINEで結果を送る
+      </a>
+    </div>
+
+    <button class="retry-btn" onclick="resetQuiz()">もう一度チェックする</button>
+  </div>
+
+</div>
+
+<script>
+// =====================
+// DATA
+// =====================
+
+const TYPES = ['脾虚', '腎陽虚', '血虚', '陰虚', '気滞', '湿熱', '血瘀', '湿痰'];
+const TYPE_LETTERS = ['A','B','C','D','E','F','G','H'];
+
+const sections = [
+  {
+    name: '気虚全般',
+    questions: [
+      { text: '全身の倦怠感や無力感がある', scores: [2,2,0,0,0,0,0,0] },
+      { text: '風邪をひきやすい', scores: [2,2,0,0,0,1,0,0] },
+      { text: '動くと汗が多く出やすい', scores: [2,2,2,0,0,0,0,0] },
+      { text: 'あざができたり皮下出血しやすい', scores: [2,2,2,0,0,0,0,0] },
+      { text: '手足が冷える', scores: [2,2,0,0,0,0,0,0] },
+      { text: '立ちくらみしやすい', scores: [2,2,2,0,0,0,0,0] },
+    ]
+  },
+  {
+    name: '脾虚の特徴',
+    questions: [
+      { text: '食欲がない・多く食べられない', scores: [3,0,0,0,0,0,0,0] },
+      { text: '腹部の不快や鈍痛がある', scores: [3,0,0,0,0,0,0,0] },
+      { text: '下痢や泥状便が多い', scores: [3,0,0,0,0,0,0,0] },
+      { text: '食べると腹が張りやすい', scores: [3,0,0,0,1,0,0,0] },
+      { text: '手足のだるさを感じることが多い', scores: [3,0,0,0,0,0,0,0] },
+      { text: '便秘になりやすい', scores: [3,0,1,0,1,0,0,0] },
+      { text: '手のひらに汗をかきやすい', scores: [3,0,0,0,0,0,0,0] },
+    ]
+  },
+  {
+    name: '腎陽虚の特徴',
+    questions: [
+      { text: '発育や成長が遅いほうだった', scores: [0,3,0,0,0,0,0,0] },
+      { text: 'ふらつきやめまいが多い', scores: [0,3,3,0,0,0,0,0] },
+      { text: '耳が聞こえにくいときが多い', scores: [0,3,0,0,0,0,0,0] },
+      { text: '腰や膝に疲れや脱力を感じる', scores: [0,3,3,0,0,0,0,0] },
+      { text: 'むくみを感じることが多い', scores: [0,3,0,0,0,0,0,0] },
+      { text: '排尿の異常を感じることが多い', scores: [0,3,0,0,0,0,0,0] },
+      { text: '（男性）インポテンツ・早漏', scores: [0,3,0,0,0,0,0,0] },
+      { text: '（女性）初潮から生理不順や無月経', scores: [0,2,0,0,0,0,0,0] },
+    ]
+  },
+  {
+    name: '血虚の特徴（肝血虚）',
+    questions: [
+      { text: '夢を見ることが多い', scores: [0,0,3,0,0,0,0,0] },
+      { text: '不安感が強い', scores: [0,0,3,0,0,0,0,0] },
+      { text: '物忘れしやすい', scores: [0,0,3,0,0,0,0,0] },
+      { text: '髪の毛が抜けやすい', scores: [0,1,3,0,0,0,1,0] },
+      { text: '目が疲れやすく乾燥しやすい', scores: [0,0,3,0,0,1,0,0] },
+      { text: '筋肉がけいれんしたりつりやすい', scores: [0,0,3,0,0,0,0,0] },
+      { text: '（女性）経血が少ない', scores: [0,0,3,0,0,0,0,0] },
+    ]
+  },
+  {
+    name: '陰虚の特徴',
+    questions: [
+      { text: '皮膚が乾燥しやすい', scores: [0,0,0,3,0,0,0,0] },
+      { text: '唇がわれやすい', scores: [0,0,0,3,0,0,0,0] },
+      { text: 'のどが渇くことが多い', scores: [0,0,0,3,0,0,0,0] },
+      { text: '体温は高くないが熱っぽく感じる', scores: [0,0,0,3,0,0,0,0] },
+      { text: '疲労時や夜間に手のひらや足の裏が熱い', scores: [0,0,0,3,0,2,0,0] },
+      { text: '夜間睡眠中に汗が出る', scores: [0,0,0,3,0,0,0,0] },
+      { text: '大便が硬いことが多い', scores: [0,0,0,3,0,1,0,0] },
+      { text: '尿量が少ないことが多い', scores: [0,0,0,3,0,1,0,0] },
+      { text: '（女性）月経周期が短い', scores: [0,0,0,3,0,0,0,0] },
+    ]
+  },
+  {
+    name: '気滞の特徴',
+    questions: [
+      { text: '胸や腹が張って苦しい', scores: [0,0,0,0,3,0,0,0] },
+      { text: '（女性）月経前後に胸が張って痛む', scores: [0,0,0,0,3,0,0,0] },
+      { text: '体のあちこちが痛む', scores: [0,0,0,0,3,0,0,0] },
+      { text: 'げっぷやガスが出ると楽になる', scores: [0,0,0,0,3,0,0,0] },
+      { text: 'いらいらしやすく怒りっぽい', scores: [0,0,0,0,3,3,0,0] },
+      { text: '目が充血しやすい', scores: [0,0,0,0,3,3,0,0] },
+      { text: '不眠になりやすい', scores: [0,0,0,0,3,3,1,0] },
+      { text: '頭痛を起こしやすい', scores: [0,0,0,0,3,3,1,1] },
+      { text: '（女性）月経周期が一定しない', scores: [1,0,0,0,3,0,1,0] },
+    ]
+  },
+  {
+    name: '湿熱の特徴',
+    questions: [
+      { text: '口が苦いことが多い', scores: [0,0,0,0,0,3,0,0] },
+      { text: '湿疹ができやすい・膿みやすい', scores: [0,0,0,0,0,3,0,0] },
+      { text: 'かゆみを感じることが多い', scores: [0,0,0,0,0,3,0,0] },
+      { text: '黄色や粘りのある痰や鼻水が出る', scores: [0,0,0,0,0,3,0,0] },
+      { text: '目やにが出やすい', scores: [0,0,0,0,0,3,0,0] },
+      { text: '排便の後すっきりしない', scores: [0,0,0,0,1,3,0,0] },
+      { text: '尿の色が濃い', scores: [0,0,0,2,0,3,0,0] },
+    ]
+  },
+  {
+    name: '血瘀の特徴',
+    questions: [
+      { text: '肩がこりやすい', scores: [0,0,0,0,0,0,2,0] },
+      { text: 'しみ・そばかすや皮膚が黒ずみやすい', scores: [0,0,0,0,0,0,3,0] },
+      { text: '静脈瘤がある', scores: [0,0,0,0,0,0,3,0] },
+      { text: '唇や歯ぐきの色が紫に近い', scores: [0,0,0,0,0,0,3,0] },
+      { text: '同じ場所に刺すような痛みがある', scores: [0,0,0,0,0,0,3,0] },
+      { text: '（女性）月経血にかたまりが多い', scores: [0,0,0,0,0,0,3,0] },
+      { text: '（女性）生理周期が長くなりやすい', scores: [0,0,0,0,0,0,3,0] },
+    ]
+  },
+  {
+    name: '湿痰の特徴',
+    questions: [
+      { text: '頭が重く感じられることが多い', scores: [1,0,0,0,0,0,0,3] },
+      { text: '体が重く感じられることが多い', scores: [1,0,0,0,0,0,0,3] },
+      { text: '腹がよく鳴る', scores: [1,0,0,0,0,0,0,3] },
+      { text: '尿量が多い', scores: [1,0,0,0,0,0,0,3] },
+      { text: '薄い・水のような鼻水や痰が出る', scores: [1,2,0,0,0,0,0,3] },
+      { text: '雨や湿度の高い日に体調が悪い', scores: [0,1,0,0,0,0,0,3] },
+      { text: '（女性）おりものが多い', scores: [0,1,0,0,0,0,0,3] },
+    ]
+  },
+  {
+    name: '外見・体格',
+    questions: [
+      { text: '体格：痩せているほう', scores: [2,0,1,0,0,0,0,0] },
+      { text: '体格：太っているほう', scores: [0,0,0,0,2,0,0,3] },
+      { text: '顔色：白（血色のない）', scores: [2,2,0,0,0,0,0,1] },
+      { text: '顔色：赤顔', scores: [0,0,2,3,0,0,0,0] },
+      { text: '顔色：黄色が強い', scores: [1,0,0,0,0,0,1,0] },
+      { text: '顔色：黒ずみがち', scores: [0,0,0,0,0,0,1,2] },
+    ]
+  },
+  {
+    name: '外見・皮膚・髪',
+    questions: [
+      { text: '皮膚の表面：かさかさしている', scores: [0,0,2,1,0,0,1,0] },
+      { text: '皮膚の表面：しっとりしている', scores: [0,0,0,0,0,0,0,2] },
+      { text: '髪の毛：細い', scores: [0,0,1,0,0,0,0,0] },
+      { text: '髪の毛：薄い（少ない）', scores: [2,2,2,0,0,0,0,0] },
+      { text: '髪の毛：ぱさついている', scores: [0,0,1,0,0,0,0,0] },
+    ]
+  },
+];
+
+const constitutionInfo = {
+  '脾虚': { emoji: '🌾', desc: '消化吸収の力が弱い状態。食後のだるさ、軟便、むくみが起こりやすい。胃腸を労わる食生活が大切。' },
+  '腎陽虚': { emoji: '🌊', desc: '腎の陽気（温める力）が不足した状態。冷え・むくみ・腰膝の倦怠感が特徴。体を温め、無理な消耗を避けることが重要。' },
+  '血虚': { emoji: '🌸', desc: '血が不足した状態。顔色が悪く、目の疲れ、爪の異常、月経量の減少などが見られやすい。栄養バランスと休養が大切。' },
+  '陰虚': { emoji: '🔥', desc: '陰液（潤い）が不足し、相対的に熱が生じた状態。ほてり、口渇、乾燥、寝汗が特徴。過労・夜更かしを避け、潤いを補う食材を。' },
+  '気滞': { emoji: '🌀', desc: '気の流れが滞った状態。ストレスで悪化しやすく、胸腹部の張り・イライラ・PMSが典型的。気分転換と深呼吸が効果的。' },
+  '湿熱': { emoji: '☀️', desc: '体内に湿と熱が溜まった状態。皮膚トラブル・口の苦み・濃い尿などが起こりやすい。刺激物・脂っこいものを控えめに。' },
+  '血瘀': { emoji: '🌺', desc: '血の流れが滞った状態。痛みが固定的・刺すような感じ、しみ、生理血の塊が特徴。体を動かして血行を促すことが大切。' },
+  '湿痰': { emoji: '💧', desc: '体内に余分な水分・痰湿が溜まった状態。体の重さ・むくみ・太りやすさが特徴。食べ過ぎを控え、適度な運動で代謝を上げる。' },
+};
+
+// =====================
+// STATE
+// =====================
+let currentSection = 0;
+let answers = {};
+const MULTIPLIERS = [0, 0.5, 1, 1.5];
+const OPTION_LABELS = ['ない', '少しある', 'かなりある', 'とてもある'];
+
+// ★ 如水鍼灸院のLINE公式アカウントID
+const LINE_ID = '@293ndiul';
+
+function startQuiz() {
+  document.getElementById('page-intro').classList.remove('active');
+  document.getElementById('page-quiz').classList.add('active');
+  currentSection = 0;
+  answers = {};
+  renderSection();
+}
+
+function renderSection() {
+  const sec = sections[currentSection];
+  document.getElementById('sectionName').textContent = sec.name;
+
+  const total = sections.length;
+  document.getElementById('progressLabel').textContent = `${currentSection + 1} / ${total}`;
+  document.getElementById('progressFill').style.width = `${((currentSection + 1) / total) * 100}%`;
+
+  document.getElementById('backBtn').style.display = currentSection === 0 ? 'none' : '';
+  document.getElementById('nextBtn').textContent = currentSection === sections.length - 1 ? '結果を見る →' : '次へ →';
+
+  const area = document.getElementById('questionArea');
+  area.innerHTML = '';
+
+  sec.questions.forEach((q, qi) => {
+    const key = `${currentSection}_${qi}`;
+    const card = document.createElement('div');
+    card.className = 'question-card';
+
+    const txt = document.createElement('div');
+    txt.className = 'question-text';
+    txt.textContent = q.text;
+    card.appendChild(txt);
+
+    const opts = document.createElement('div');
+    opts.className = 'options';
+
+    OPTION_LABELS.forEach((label, vi) => {
+      const btn = document.createElement('button');
+      btn.className = 'option-btn' + (answers[key] === vi ? ' selected' : '');
+      btn.textContent = label;
+      btn.onclick = () => {
+        answers[key] = vi;
+        card.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+      };
+      opts.appendChild(btn);
+    });
+
+    card.appendChild(opts);
+    area.appendChild(card);
+  });
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function nextPage() {
+  if (currentSection < sections.length - 1) {
+    currentSection++;
+    renderSection();
+  } else {
+    showResult();
+  }
+}
+
+function prevPage() {
+  if (currentSection > 0) {
+    currentSection--;
+    renderSection();
+  }
+}
+
+function showResult() {
+  document.getElementById('page-quiz').classList.remove('active');
+  document.getElementById('page-result').classList.add('active');
+
+  const rawScores = new Array(8).fill(0);
+  sections.forEach((sec, si) => {
+    sec.questions.forEach((q, qi) => {
+      const key = `${si}_${qi}`;
+      const val = answers[key] ?? 0;
+      const mult = MULTIPLIERS[val];
+      q.scores.forEach((s, ti) => {
+        rawScores[ti] += s * mult;
+      });
+    });
+  });
+
+  const maxRaw = Math.max(...rawScores);
+  const normalized = rawScores.map(s => maxRaw > 0 ? Math.round((s / maxRaw) * 7 * 10) / 10 : 0);
+
+  const A=normalized[0], B=normalized[1], C=normalized[2], D=normalized[3];
+  const E=normalized[4], F=normalized[5], G=normalized[6], H=normalized[7];
+
+  const kyo = Math.round((A+B+C+D) * 10) / 10;
+  const jitsu = Math.round((E+F+G+H) * 10) / 10;
+  const inVal = Math.round((A+B+G+H) * 10) / 10;
+  const yoVal = Math.round((C+D+E+F) * 10) / 10;
+
+  document.getElementById('kyoVal').textContent = kyo;
+  document.getElementById('jitsuVal').textContent = jitsu;
+  document.getElementById('inVal').textContent = inVal;
+  document.getElementById('yoVal').textContent = yoVal;
+
+  document.getElementById('kyoJudge').textContent = kyo > jitsu ? '← 傾向あり' : '';
+  document.getElementById('jitsuJudge').textContent = jitsu > kyo ? '← 傾向あり' : '';
+  document.getElementById('inJudge').textContent = inVal > yoVal ? '← 傾向あり' : '';
+  document.getElementById('yoJudge').textContent = yoVal > inVal ? '← 傾向あり' : '';
+
+  const grid = document.getElementById('scoresGrid');
+  grid.innerHTML = '';
+  const maxNorm = Math.max(...normalized);
+  normalized.forEach((val, i) => {
+    const item = document.createElement('div');
+    item.className = 'score-item' + (val >= maxNorm * 0.8 ? ' highlighted' : '');
+    item.innerHTML = `<span class="score-name">${TYPE_LETTERS[i]}. ${TYPES[i]}</span><span class="score-val">${val}</span>`;
+    grid.appendChild(item);
+  });
+
+  const sorted = normalized.map((v,i) => ({v, i})).sort((a,b) => b.v - a.v);
+  const topTypes = sorted.filter(x => x.v >= maxNorm * 0.7).slice(0, 3);
+  const blocks = document.getElementById('constitutionBlocks');
+  blocks.innerHTML = '';
+  topTypes.forEach(({v, i}) => {
+    const info = constitutionInfo[TYPES[i]];
+    const bl = document.createElement('div');
+    bl.className = 'constitution-block';
+    bl.innerHTML = `<h3>${info.emoji} ${TYPE_LETTERS[i]}. ${TYPES[i]}（スコア: ${v}）</h3><p>${info.desc}</p>`;
+    blocks.appendChild(bl);
+  });
+
+  // LINE送信テキストを作成
+  buildLineMessage(normalized, kyo, jitsu, inVal, yoVal, topTypes);
+
+  drawRadar(normalized);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function buildLineMessage(normalized, kyo, jitsu, inVal, yoVal, topTypes) {
+  const maxNorm = Math.max(...normalized);
+
+  // 上位体質のテキスト
+  const topText = topTypes.map(({v, i}) =>
+    `  ${TYPE_LETTERS[i]}. ${TYPES[i]}：${v}`
+  ).join('\n');
+
+  // 全スコア
+  const allScores = normalized.map((v, i) =>
+    `  ${TYPE_LETTERS[i]}. ${TYPES[i]}：${v}`
+  ).join('\n');
+
+  const kyoOrJitsu = kyo > jitsu ? `虚証傾向（${kyo}）` : jitsu > kyo ? `実証傾向（${jitsu}）` : `虚実バランス`;
+  const inOrYo = inVal > yoVal ? `陰証傾向（${inVal}）` : yoVal > inVal ? `陽証傾向（${yoVal}）` : `陰陽バランス`;
+
+  const msg =
+`【東洋医学 体質判別チェック結果】
+如水鍼灸院ウェブサイトより
+
+◆ 体質傾向
+${kyoOrJitsu} / ${inOrYo}
+
+◆ 上位体質
+${topText}
+
+◆ 全スコア（最大7）
+${allScores}
+
+---
+このチェック結果を参考に、どうぞよろしくお願いいたします。`;
+
+  const encoded = encodeURIComponent(msg);
+  const lineUrl = `https://line.me/R/oaMessage/${encodeURIComponent(LINE_ID)}/?${encoded}`;
+  document.getElementById('lineSendBtn').href = lineUrl;
+}
+
+function drawRadar(values) {
+  const canvas = document.getElementById('radarChart');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W / 2, cy = H / 2;
+  const R = Math.min(W, H) / 2 - 50;
+  const N = 8;
+  const labels = TYPES.map((t, i) => TYPE_LETTERS[i] + '. ' + t);
+
+  ctx.clearRect(0, 0, W, H);
+
+  for (let lv = 1; lv <= 7; lv++) {
+    const r = R * (lv / 7);
+    ctx.beginPath();
+    ctx.strokeStyle = lv === 7 ? '#C4621A44' : '#E8D5C044';
+    ctx.lineWidth = lv === 7 ? 1.5 : 1;
+    for (let i = 0; i <= N; i++) {
+      const angle = (Math.PI * 2 * i / N) - Math.PI / 2;
+      const x = cx + r * Math.cos(angle);
+      const y = cy + r * Math.sin(angle);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+    if (lv % 2 === 0 || lv === 7) {
+      ctx.fillStyle = '#7A5C4288';
+      ctx.font = '10px Noto Sans JP';
+      ctx.textAlign = 'center';
+      ctx.fillText(lv, cx + 4, cy - r * Math.cos(0) - 4);
+    }
+  }
+
+  for (let i = 0; i < N; i++) {
+    const angle = (Math.PI * 2 * i / N) - Math.PI / 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + R * Math.cos(angle), cy + R * Math.sin(angle));
+    ctx.strokeStyle = '#E8D5C0';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  ctx.beginPath();
+  values.forEach((v, i) => {
+    const angle = (Math.PI * 2 * i / N) - Math.PI / 2;
+    const r = R * (Math.min(v, 7) / 7);
+    const x = cx + r * Math.cos(angle);
+    const y = cy + r * Math.sin(angle);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(196,98,26,0.18)';
+  ctx.fill();
+  ctx.strokeStyle = '#C4621A';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  values.forEach((v, i) => {
+    const angle = (Math.PI * 2 * i / N) - Math.PI / 2;
+    const r = R * (Math.min(v, 7) / 7);
+    ctx.beginPath();
+    ctx.arc(cx + r * Math.cos(angle), cy + r * Math.sin(angle), 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#C4621A';
+    ctx.fill();
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  });
+
+  ctx.fillStyle = '#2C1A0E';
+  ctx.font = 'bold 11px Noto Sans JP';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  labels.forEach((lbl, i) => {
+    const angle = (Math.PI * 2 * i / N) - Math.PI / 2;
+    const r = R + 36;
+    const x = cx + r * Math.cos(angle);
+    const y = cy + r * Math.sin(angle);
+    const parts = lbl.split('. ');
+    ctx.fillStyle = '#7A5C42';
+    ctx.font = '10px Noto Sans JP';
+    ctx.fillText(parts[0], x, y - 7);
+    ctx.fillStyle = '#2C1A0E';
+    ctx.font = 'bold 11px Noto Sans JP';
+    ctx.fillText(parts[1], x, y + 7);
+  });
+}
+
+function resetQuiz() {
+  document.getElementById('page-result').classList.remove('active');
+  document.getElementById('page-intro').classList.add('active');
+  answers = {};
+  currentSection = 0;
+}
+</script>
+</body>
+</html>
