@@ -439,7 +439,7 @@
 
     <!-- LINE送信セクション -->
     <div class="line-send-section">
-      <p>🌿 診断結果を如水鍼灸院にLINEで送ることができます。<br>施術前の参考にさせていただきます。</p>
+      <p>🌿 診断結果を如水鍼灸院にLINEで送ることができます。<br>治療前の参考にさせていただきます。</p>
       <a id="lineSendBtn" href="#" class="line-btn" target="_blank">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
           <path d="M12 2C6.48 2 2 5.92 2 10.72c0 2.93 1.58 5.53 4.03 7.22L5 21l3.28-1.72c1.2.33 2.45.5 3.72.5 5.52 0 10-3.92 10-8.78C22 5.92 17.52 2 12 2zm1.03 11.83l-2.56-2.72-4.97 2.72 5.47-5.82 2.63 2.72 4.9-2.72-5.47 5.82z"/>
@@ -785,7 +785,7 @@ ${topText}
 ${allScores}
 
 ---
-このチェック結果を参考に、どうぞよろしくお願いいたします。`;
+
 
   const encoded = encodeURIComponent(msg);
   const lineUrl = `https://line.me/R/oaMessage/${encodeURIComponent(LINE_ID)}/?${encoded}`;
